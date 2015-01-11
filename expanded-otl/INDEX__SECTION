@@ -1,0 +1,117 @@
+Operator:     phy_aniso_eval
+Label:        Phy Aniso Eval
+Path:         oplib:/Shop/phy_aniso_eval?Shop/phy_aniso_eval
+Icon:         SHOP_generic
+Table:        Shop
+License:      
+Extra:        cvex
+Inputs:       0 to 0
+Subnet:       false
+Python:       false
+Empty:        false
+Modified:     Fri Jan  9 10:37:54 2015
+
+Operator:     phy_aniso_sample
+Label:        Phy Aniso Sample
+Path:         oplib:/Shop/phy_aniso_sample?Shop/phy_aniso_sample
+Icon:         SHOP_generic
+Table:        Shop
+License:      
+Extra:        cvex
+Inputs:       0 to 0
+Subnet:       false
+Python:       false
+Empty:        false
+Modified:     Fri Jan  9 10:40:10 2015
+
+Operator:     phy_aniso_trans_eval
+Label:        Phy Aniso Trans Eval
+Path:         oplib:/Shop/phy_aniso_trans_eval?Shop/phy_aniso_trans_eval
+Icon:         SHOP_generic
+Table:        Shop
+License:      
+Extra:        cvex
+Inputs:       0 to 0
+Subnet:       false
+Python:       false
+Empty:        false
+Modified:     Fri Jan  9 10:41:20 2015
+
+Operator:     phy_aniso_trans_sample
+Label:        Phy Aniso Trans Sample
+Path:         oplib:/Shop/phy_aniso_trans_sample?Shop/phy_aniso_trans_sample
+Icon:         SHOP_generic
+Table:        Shop
+License:      
+Extra:        cvex
+Inputs:       0 to 0
+Subnet:       false
+Python:       false
+Empty:        false
+Modified:     Fri Jan  9 10:44:16 2015
+
+Operator:     phy_eval
+Label:        Phy Eval
+Path:         oplib:/Shop/phy_eval?Shop/phy_eval
+Icon:         SHOP_generic
+Table:        Shop
+License:      
+Extra:        cvex
+Inputs:       0 to 0
+Subnet:       false
+Python:       false
+Empty:        false
+Modified:     Fri Jan  9 10:45:36 2015
+
+Operator:     phy_sample
+Label:        Phy Sample
+Path:         oplib:/Shop/phy_sample?Shop/phy_sample
+Icon:         SHOP_generic
+Table:        Shop
+License:      
+Extra:        cvex
+Inputs:       0 to 0
+Subnet:       false
+Python:       false
+Empty:        false
+Modified:     Fri Jan  9 10:48:29 2015
+
+Operator:     phy_trans_eval
+Label:        Phy Trans Eval
+Path:         oplib:/Shop/phy_trans_eval?Shop/phy_trans_eval
+Icon:         SHOP_generic
+Table:        Shop
+License:      
+Extra:        cvex
+Inputs:       0 to 0
+Subnet:       false
+Python:       false
+Empty:        false
+Modified:     Fri Jan  9 10:53:10 2015
+
+Operator:     phy_trans_sample
+Label:        Phy Trans Sample
+Path:         oplib:/Shop/phy_trans_sample?Shop/phy_trans_sample
+Icon:         SHOP_generic
+Table:        Shop
+License:      
+Extra:        cvex
+Inputs:       0 to 0
+Subnet:       false
+Python:       false
+Empty:        false
+Modified:     Fri Jan  9 10:54:53 2015
+
+Operator:     physurface
+Label:        PhySurface
+Path:         oplib:/Vop/physurface?Vop/physurface
+Icon:         SHOP_surface
+Table:        Vop
+License:      
+Extra:        surface
+Inputs:       0 to 49
+Subnet:       false
+Python:       false
+Empty:        false
+Modified:     Sun Jan 11 16:53:36 2015
+

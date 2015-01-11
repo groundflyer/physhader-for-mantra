@@ -1,0 +1,150 @@
+;_name	phy_eval
+; ModuleID = 'phy_eval'
+
+@refl = external global <3 x double>
+@eval = external global <3 x double>
+@pdf = external global double
+@0 = private constant [4 x i8] c"all\00"
+@1 = private constant [11 x i8] c"alldiffuse\00"
+@2 = private constant [10 x i8] c"allvolume\00"
+@3 = private constant [11 x i8] c"allrefract\00"
+
+define private double @"ggg@FFF"(double* %dotNH, double* %sigma) nounwind alwaysinline {
+entry:
+  %sigma1 = load double* %sigma
+  %dotNH3 = load double* %dotNH
+  %output = fmul double %dotNH3, %dotNH3
+  %output5 = call double @"div@FF"(double 1.000000e+00, double %output)
+  %output6 = fadd double %sigma1, %output5
+  %output7 = fsub double %output6, 1.000000e+00
+  %output8 = call double @"div@FF"(double %sigma1, double %output7)
+  %output11 = fmul double %output8, %output8
+  ret double %output11
+}
+
+declare double @"div@FF"(double, double) nounwind readnone
+
+define private double @"ggg_albedo@FF"(double* %sigma) nounwind alwaysinline {
+entry:
+  %sigma1 = load double* %sigma
+  %return = call double @"sqrt@FF"(double %sigma1)
+  %output = fadd double %return, 1.000000e+00
+  %output4 = fmul double 2.000000e+00, %sigma1
+  %output6 = fadd double %output4, %return
+  %output9 = fmul double %output, %output
+  %output10 = call double @"div@FF"(double %output6, double %output9)
+  ret double %output10
+}
+
+declare double @"sqrt@FF"(double) nounwind readnone
+
+define private double @"gaf@FFF"(double* %nu, double* %sigma) nounwind alwaysinline {
+entry:
+  %sigma1 = load double* %sigma
+  %nu2 = load double* %nu
+  %output = fmul double %nu2, %nu2
+  %output4 = call double @"div@FF"(double 1.000000e+00, double %output)
+  %output5 = fsub double %output4, 1.000000e+00
+  %output6 = fmul double %sigma1, %output5
+  %output7 = fadd double 1.000000e+00, %output6
+  %return = call double @"sqrt@FF"(double %output7)
+  %output8 = fadd double 1.000000e+00, %return
+  %output9 = call double @"div@FF"(double 2.000000e+00, double %output8)
+  ret double %output9
+}
+
+define private double @"ct_ggg@FFFF"(double* %sigma, double* %dotNH, double* %dotNL) nounwind alwaysinline {
+entry:
+  %0 = alloca double
+  %1 = alloca double
+  %2 = alloca double
+  %3 = alloca double
+  %dotNH1 = load double* %dotNH
+  store double %dotNH1, double* %3
+  %sigma2 = load double* %sigma
+  store double %sigma2, double* %0
+  %ggg = call double @"ggg@FFF"(double* %3, double* %0)
+  %dotNL3 = load double* %dotNL
+  store double %dotNL3, double* %1
+  %sigma4 = load double* %sigma
+  store double %sigma4, double* %2
+  %gaf = call double @"gaf@FFF"(double* %1, double* %2)
+  %output = fmul double %ggg, %gaf
+  ret double %output
+}
+
+define void @phy_eval(<3 x double> %u, <3 x double> %v, i32 %bounces, <3 x double> %refl, <3 x double> %eval, double %pdf, <3 x double> %n, double %sigma) nounwind {
+entry:
+  %0 = alloca double
+  %1 = alloca double
+  %2 = alloca double
+  %3 = alloca double
+  %output = call <3 x double> @"add@VV"(<3 x double> %v, <3 x double> %u)
+  %return = call <3 x double> @"normalize@VV"(<3 x double> %output)
+  %return4 = call double @"dot@FVV"(<3 x double> %return, <3 x double> %n)
+  %return6 = call i32 @"bouncemask@IS"(i8* getelementptr inbounds ([4 x i8]* @0, i32 0, i32 0))
+  %return7 = call i32 @"bouncemask@IS"(i8* getelementptr inbounds ([11 x i8]* @1, i32 0, i32 0))
+  %return8 = call i32 @"bouncemask@IS"(i8* getelementptr inbounds ([10 x i8]* @2, i32 0, i32 0))
+  %return9 = or i32 %return7, %return8
+  %return10 = call i32 @"bnot@II"(i32 %return9)
+  %return11 = and i32 %return6, %return10
+  %return12 = call i32 @"bouncemask@IS"(i8* getelementptr inbounds ([11 x i8]* @3, i32 0, i32 0))
+  %return13 = call i32 @"bnot@II"(i32 %return12)
+  %return14 = and i32 %return11, %return13
+  %return15 = and i32 %bounces, %return14
+  %return17 = fcmp ogt double %return4, 0.000000e+00
+  %return18 = zext i1 %return17 to i32
+  %return19 = call i32 @"and@III"(i32 %return15, i32 %return18)
+  %4 = icmp ne i32 %return19, 0
+  br i1 %4, label %true, label %end
+
+true:                                             ; preds = %entry
+  %return22 = call double @"dot@FVV"(<3 x double> %n, <3 x double> %v)
+  store double %sigma, double* %0
+  store double %return4, double* %1
+  store double %return22, double* %2
+  %ct_ggg = call double @"ct_ggg@FFFF"(double* %0, double* %1, double* %2)
+  %cast = call <3 x double> @"set@VF"(double %ct_ggg)
+  store double %sigma, double* %3
+  %ggg_albedo = call double @"ggg_albedo@FF"(double* %3)
+  %output28 = fsub double 1.000000e+00, %ggg_albedo
+  %cast29 = call <3 x double> @"set@VF"(double %output28)
+  br label %end
+
+end:                                              ; preds = %true, %entry
+  %refl30.0 = phi <3 x double> [ %cast29, %true ], [ %refl, %entry ]
+  %eval31.0 = phi <3 x double> [ %cast, %true ], [ %eval, %entry ]
+  %pdf32.0 = phi double [ %ct_ggg, %true ], [ %pdf, %entry ]
+  store <3 x double> %refl30.0, <3 x double>* @refl
+  store <3 x double> %eval31.0, <3 x double>* @eval
+  store double %pdf32.0, double* @pdf
+  ret void
+}
+
+declare <3 x double> @"add@VV"(<3 x double>, <3 x double>) nounwind readnone
+
+declare <3 x double> @"normalize@VV"(<3 x double>) nounwind
+
+declare double @"dot@FVV"(<3 x double>, <3 x double>) nounwind
+
+declare i32 @"bouncemask@IS"(i8*) nounwind readnone
+
+declare i32 @"bnot@II"(i32) nounwind readnone
+
+declare i32 @"and@III"(i32, i32) nounwind readnone
+
+declare <3 x double> @"set@VF"(double) nounwind readnone
+
+define void @__shader_default_arguments() {
+entry:
+  call void @phy_eval(<3 x double> zeroinitializer, <3 x double> zeroinitializer, i32 0, <3 x double> zeroinitializer, <3 x double> zeroinitializer, double 0.000000e+00, <3 x double> zeroinitializer, double 1.000000e-02)
+  ret void
+}
+
+!context = !{!0}
+!version = !{!1}
+
+!0 = metadata !{metadata !"cvex"}
+!1 = metadata !{metadata !"13.0.621"}
+
+;_code_end

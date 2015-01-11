@@ -1,0 +1,220 @@
+= PhySurface =
+
+#type: node
+#context: vop
+
+"""Physical plausible, easy to use, compact surface shader."""
+
+Copyright (c) 2013-2015 Roman Saldygashev <sldg.roman@gmail.com>
+
+== Features ==
+* Energy conserving
+* Microfacet-based BSDF's
+* Anisotropy
+* Conductor Fresnel
+* Volume absorption
+* Subsurface scattering
+* Translucency
+* Dispersion
+* Thin plate shading
+* Transparent shadows
+* Shader nesting
+* Extra image planes support
+
+@parameters
+
+== Physical parameters ==
+
+Material:
+    General material type.
+
+    NOTE:
+        When conductor is choosen only specular component is allowed
+        and the complex Fresnel function will be used to compute reflectivity (see [IOR|#IOR]).
+
+Thickness:
+    Treat shading object as thin plate with specified thickness.
+    If thickness is not equal zero, the shader calculates the refracted outgoing ray analytically.
+
+    TIP:
+        It may be useful for windows or cloth materials.
+
+    NOTE:
+        It does not work with PBR (impossible to set ray origin).
+
+    The subsurface scattering will be replaced with translucency.
+
+Albedo:
+    Maximum albedo of the shading surface.
+
+IOR:
+    The tuple of the refractive indicies.
+
+    The first value is a refractive index, real part of the complex IOR of the interior media,
+    the second value is an index of the incident media (usually air),
+    the third value is an extinction coefficient, an imaginary part of a complex IOR (conductors).
+
+Surface Color:
+    Diffuse color for dielectrics or specular color for conductors.
+
+Diffuse:
+    The diffuse component weight.
+
+    NOTE:
+        It always disables transmission
+        but changes appearance as even the shading point under a transparent layer.
+
+Roughness:
+    Oren-Nayar roughness.
+
+Specular:
+    The specular reflection component weight.
+
+Roughness:
+    Reflection/refraction roughness. `0` - perfectly smooth surface.
+
+Anisotropy:
+    Anisotropy bias. It affects both reflection and refraction components.
+
+Transmittance:
+    The refraction component weight.
+
+Absorptivity:
+    Vlume absorption coefficient. Ranges in `0` - Infinity. Higher values produces darker result.
+    It affects on the transmissive components such as refraction and subsurface scattering.
+
+    NOTE:
+        When __Thickness__ is enabled the parameter becomes transmission color.
+
+SSS:
+    The subsurface scattering component weight.
+
+Scattering:
+    Scattering coefficient. Ranges in `0` - Infinity.
+
+    NOTE:
+        When __Thickness__ is enabled becomes a translucency color.
+
+Assymetry:
+    Average cosine of scattering (phase).
+    Values from `-1` to `0` produces back scattering, `0` to `1` - front scattering.
+    It more affects the single scattering.
+
+Dispersion:
+    The list of avaible predifined Sellmeier coefficients.
+
+Sellmeier B/C:
+    Coefficients for Sellmeier equation to determine dispersion.
+
+== Technical parameters ==
+
+=== Ray-Tracing ===
+
+Reflection/refraction:
+    The tracing method of the corresponding component.
+
+    Gather:
+        Sends rays into the scene and use information from the shaders of surfaces hit by the rays
+        for reflection/refraction computation.
+    Occlusion:
+        Sends rays into the scene and checks only hit.
+
+        TIP:
+            Set the parameter on with glossy surfaces in exterior scenes
+            to improve perfomance.
+
+    NOTE:
+        Don't set occlusion or different from `Cf` __Gather Variable__
+        with materials which need multiple refractions for correct shading (e.g. glass).
+
+Reflection/refraction gather variable:
+    The name of the variable to gather.
+
+    TIP:
+        Replace `Cf` with less computational complex variable
+        (e.g. direct lighting) to improve rendering perfomance, especially on glossy surfaces.
+
+Opacity Blending:
+    Blend traced value with the opacity of the intermediate objects.
+
+    TIP:
+        Disable the parameter to improve rendering perfomance, but
+        the objects with an alpha map will displayed incorrectly in reflection/refraction.
+
+Empty Object:
+    Assume shading object empty. All rays directed inside will search for hit only the same object.
+
+    TIP:
+        It can be useful for nested shaders and simple CSG replacement.
+
+Sampling Quality:
+    What the value to use as number of samples.
+
+    Auto:
+        Compute sample count depending on __Specular Roughness__.
+    Minimum:
+        Use [Min Ray Samples|/props/mantra#vm_minraysamples].
+    Maximum:
+        Use [Max Ray Samples|/props/mantra#vm_maxraysamples].
+    Manual:
+        Set manually.
+
+Accurate Absorption:
+    If transmissive surface is glossy (__Specular Roughness__ is not equal zero), send additional rays
+    to perform more accurate absorption.
+
+Depth Importance:
+    The secondary bounces sample count optimizations.
+    At each next ray level the number of samples will be reduced times the value.
+
+Max Ray Distance:
+    The maximum distance from the sample point to consider geometry for any tracing.
+
+    TIP:
+        Set the value to `0` to get pure environment reflection. No tracing will be evolved.
+
+Dispersion Samples:
+    The number of samples for dispersion evaluation.
+
+=== SSS ===
+
+Single Scattering Samples:
+    The number of single scattering samples.
+
+    NOTE:
+        Single scattering works only when both __SSS__ and __Transmission__ are enabled.
+
+Multiple Scattering Samples:
+    The number of samples for multiple scattering.
+
+Scope:
+    The objects to ray test.
+    Useful with nested shaders.
+
+@inputs
+
+Position:
+    Allows to override the surface position to compute the color for.
+
+Normal:
+    If you override the position, you need to override the normal.
+
+Incident Vector:
+    Allows to override the incident vector.
+
+Tangent:
+    The surface derivative. Override it to get control of anisotropy direction.
+
+@outputs
+
+Color:
+    The result of shader evaluation.
+
+Opacity:
+    The computed opacity.
+
+All:
+    The components for extra image planes: diffuse, reflect, refract, sss.
+
+BSDF:
+    The result for PBR.

@@ -1,0 +1,87 @@
+# Context: CVex
+
+/*
+ * Houdini Dialog Script generated automatically
+ * by vcc from source file phy_eval.
+ * Generated: Fri Jan  9 10:53:10 2015
+ */
+
+{
+    name	"phy_trans_eval"
+    script	"phy_eval"
+    label	"Phy Trans Eval"
+    rendermask	VMantra
+
+    help {
+	  ""
+    }
+
+    parm {
+	name	u
+	label	"u"
+	type	float
+	size	3
+	default	{ 0 0 0 }
+	export	none
+    }
+    parm {
+	name	v
+	label	"v"
+	type	float
+	size	3
+	default	{ 0 0 0 }
+	export	none
+    }
+    parm {
+	name	bounces
+	label	"bounces"
+	type	integer
+	default	{ 0 }
+	export	none
+    }
+    parm {
+	name	refl
+	label	"refl"
+	type	float
+	size	3
+	default	{ 0 0 0 }
+	export	all
+    }
+    parm {
+	name	eval
+	label	"eval"
+	type	float
+	size	3
+	default	{ 0 0 0 }
+	export	all
+    }
+    parm {
+	name	pdf
+	label	"pdf"
+	type	float
+	default	{ 0 }
+	export	all
+    }
+    parm {
+	name	n
+	label	"n"
+	type	float
+	size	3
+	default	{ 0 0 0 }
+	export	none
+    }
+    parm {
+	name	sigma
+	label	"sigma"
+	type	float
+	default	{ 0.10000000000000001 }
+	export	none
+    }
+    parm {
+	name	eta
+	label	"eta"
+	type	float
+	default	{ 1 }
+	export	none
+    }
+}
