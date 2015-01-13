@@ -81,6 +81,16 @@
 	v = refract(-u, h, eta);
 
 
+// Next routines based on:
+// 
+// Walter B., Marschner S. R., Li H., Torrance K. E.:
+// Microfacet models for refraction through rough surfaces. (2007)
+//
+// Heitz E. and d’Eon E.:
+// Importance Sampling Microfacet-Based BSDFs using
+// the Distribution of Visible Normals. (2014)
+
+
 // Modified GGX distribution
 float
 ggg(float dotNH, sigma)
