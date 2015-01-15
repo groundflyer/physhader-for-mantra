@@ -2,6 +2,8 @@
 
 Physical plausible, easy to use, compact surface shader for Mantra renderer.
 
+![PhySurface Materials](img/materials.jpg "Materials preview")
+
 ## Features
 * VOP type operator
 * Energy conserving
@@ -18,9 +20,13 @@ Physical plausible, easy to use, compact surface shader for Mantra renderer.
 * Extra image planes support
 * and more...
 
-## Installation
-Simply copy `vex` and `otls` folders to your home Houdini directory or run:
+##Installation
 
-`make`
+### On Linux
+```
+make
+make install
+```
 
-`make install`
+### On Windows
+Run `install.bat`
