@@ -1,0 +1,10 @@
+* text=auto
+
+*.h text
+
+*.bat text eol=crlf
+
+*.png binary
+*.jpg binary
+*.otl binary
+*.gal binary
