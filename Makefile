@@ -6,6 +6,7 @@ all:
 	hotl -c expanded-otl $(OTL)
 
 install:
+	if [ ! -d otls ]; then mkdir otls; fi
 	cp -r otls vex gallery $(HOU_DIR)
 
 clean:
