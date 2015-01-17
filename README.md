@@ -25,7 +25,9 @@ Copy `vex`,`otls` and `gallery` folders into your Houdini home directory.
 
 If you have problems with loading otl try to rebuild the otl.
 You can do it manually with command:
+
 `hotl -c expanded-otl otls/physhader.otl`
+
 or use the provided scripts.
 
 ### Linux
