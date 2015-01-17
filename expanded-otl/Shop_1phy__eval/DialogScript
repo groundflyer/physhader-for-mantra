@@ -3,7 +3,7 @@
 /*
  * Houdini Dialog Script generated automatically
  * by vcc from source file phy_eval.
- * Generated: Tue Jan 13 16:05:48 2015
+ * Generated: Sat Jan 17 12:21:56 2015
  */
 
 {
@@ -35,6 +35,13 @@
     parm {
 	name	bounces
 	label	"bounces"
+	type	integer
+	default	{ 0 }
+	export	none
+    }
+    parm {
+	name	reverse
+	label	"reverse"
 	type	integer
 	default	{ 0 }
 	export	none

@@ -385,13 +385,14 @@ edist(float alb, eta;
       float wdfs, wspc, wtrn, wsss;
       export float kdfs, kspc, ktrn, ksss)
 {
-    float ar, at, summ,
+    float summ,
 	wgloss = 0,
 	_spc = enableSPC * wspc,
 	_trn = enableTRN * wtrn,
 	_dfs = enableDFS * wdfs,
 	_sss = enableSSS * wsss;
 
+    // Reflection and refraction are depened on incident ray
     wgloss = max(enableSPC, enableTRN) * max(wspc, wtrn);
 
     _spc /= wgloss;
@@ -400,10 +401,12 @@ edist(float alb, eta;
     // Conserve fresnel attenuated energy
     if(enableSPC || enableTRN)
 	{
+	    float ar, at;
 	    fresnel_albedo(eta, ar, at);
 	    _dfs /= at;
 	}
 
+    // Diffuse and SSS are uniform on hemisphere
     summ = _dfs + _sss;
 
     if (enableTRN)
@@ -413,12 +416,16 @@ edist(float alb, eta;
 	}
     else
 	{
-	    summ += _spc;
-	    kspc = alb * _spc / summ;
+	    summ = max(summ, wgloss);
+
+	    _spc /= summ;
+	    kspc = alb * _spc;
 	}
 
-    kdfs = alb * _dfs / summ;
-    ksss = alb * _sss / summ;
+    _dfs /= summ;
+    _sss /= summ;
+    kdfs = alb * _dfs;
+    ksss = alb * _sss;
 }
 
 

@@ -9,9 +9,6 @@
     <toolMenuContext name="viewer">
       <contextNetType>VOP</contextNetType>
     </toolMenuContext>
-    <toolMenuContext name="pop_viewer">
-      <contextNetType>VOP</contextNetType>
-    </toolMenuContext>
     <toolMenuContext name="network">
       <contextOpType>$HDA_TABLE_AND_NAME</contextOpType>
     </toolMenuContext>

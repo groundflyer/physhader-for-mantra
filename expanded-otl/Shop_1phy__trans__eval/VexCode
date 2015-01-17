@@ -5,6 +5,9 @@
 @eval = external global <3 x double>
 @pdf = external global double
 @0 = private constant [11 x i8] c"allrefract\00"
+@1 = private constant [5 x i8] c"refl\00"
+@2 = private constant [5 x i8] c"eval\00"
+@3 = private constant [4 x i8] c"pdf\00"
 
 define private double @"ggg@FFF"(double* %dotNH, double* %sigma) nounwind alwaysinline {
 entry:
@@ -70,7 +73,7 @@ entry:
   ret double %output
 }
 
-define void @phy_trans_eval(<3 x double> %u, <3 x double> %v, i32 %bounces, <3 x double> %refl, <3 x double> %eval, double %pdf, <3 x double> %n, double %sigma, double %eta) nounwind {
+define void @phy_trans_eval(<3 x double> %u, <3 x double> %v, i32 %bounces, i32 %reverse, <3 x double> %refl, <3 x double> %eval, double %pdf, <3 x double> %n, double %sigma, double %eta) nounwind {
 entry:
   %0 = alloca double
   %1 = alloca double
@@ -84,16 +87,18 @@ entry:
 true:                                             ; preds = %entry
   %return4 = call <3 x double> @"neg@VV"(<3 x double> %u)
   %return6 = fcmp one double %eta, 1.000000e+00
-  %return7 = zext i1 %return6 to i32
   br i1 %return6, label %true8, label %end9
 
 end:                                              ; preds = %end9, %entry
-  %refl35.0 = phi <3 x double> [ %cast34, %end9 ], [ %refl, %entry ]
-  %eval36.0 = phi <3 x double> [ %cast, %end9 ], [ %eval, %entry ]
-  %pdf37.0 = phi double [ %ct_ggg, %end9 ], [ %pdf, %entry ]
-  store <3 x double> %refl35.0, <3 x double>* @refl
-  store <3 x double> %eval36.0, <3 x double>* @eval
-  store double %pdf37.0, double* @pdf
+  %"<refl>.0" = phi <3 x double> [ %cast34, %end9 ], [ %refl, %entry ]
+  %"<eval>.0" = phi <3 x double> [ %cast, %end9 ], [ %eval, %entry ]
+  %"<pdf>.0" = phi double [ %ct_ggg, %end9 ], [ %pdf, %entry ]
+  %gvalue = call <3 x double> @"_export@VSV"(i8* getelementptr inbounds ([5 x i8]* @1, i32 0, i32 0), <3 x double> %"<refl>.0") nounwind readonly
+  %gvalue36 = call <3 x double> @"_export@VSV"(i8* getelementptr inbounds ([5 x i8]* @2, i32 0, i32 0), <3 x double> %"<eval>.0") nounwind readonly
+  %gvalue38 = call double @"_export@FSF"(i8* getelementptr inbounds ([4 x i8]* @3, i32 0, i32 0), double %"<pdf>.0") nounwind readonly
+  store <3 x double> %gvalue, <3 x double>* @refl
+  store <3 x double> %gvalue36, <3 x double>* @eval
+  store double %gvalue38, double* @pdf
   ret void
 
 true8:                                            ; preds = %true
@@ -135,9 +140,13 @@ declare double @"dot@FVV"(<3 x double>, <3 x double>) nounwind
 
 declare <3 x double> @"set@VF"(double) nounwind readnone
 
+declare <3 x double> @"_export@VSV"(i8*, <3 x double>)
+
+declare double @"_export@FSF"(i8*, double)
+
 define void @__shader_default_arguments() {
 entry:
-  call void @phy_trans_eval(<3 x double> zeroinitializer, <3 x double> zeroinitializer, i32 0, <3 x double> zeroinitializer, <3 x double> zeroinitializer, double 0.000000e+00, <3 x double> zeroinitializer, double 1.000000e-01, double 1.000000e+00)
+  call void @phy_trans_eval(<3 x double> zeroinitializer, <3 x double> zeroinitializer, i32 0, i32 0, <3 x double> zeroinitializer, <3 x double> zeroinitializer, double 0.000000e+00, <3 x double> zeroinitializer, double 1.000000e-01, double 1.000000e+00)
   ret void
 }
 
@@ -145,6 +154,6 @@ entry:
 !version = !{!1}
 
 !0 = metadata !{metadata !"cvex"}
-!1 = metadata !{metadata !"13.0.621"}
+!1 = metadata !{metadata !"14.0.201.13"}
 
 ;_code_end

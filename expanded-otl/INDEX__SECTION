@@ -9,7 +9,7 @@ Inputs:       0 to 0
 Subnet:       false
 Python:       false
 Empty:        false
-Modified:     Tue Jan 13 16:05:26 2015
+Modified:     Sat Jan 17 12:06:26 2015
 
 Operator:     phy_aniso_sample
 Label:        Phy Aniso Sample
@@ -35,7 +35,7 @@ Inputs:       0 to 0
 Subnet:       false
 Python:       false
 Empty:        false
-Modified:     Tue Jan 13 16:05:40 2015
+Modified:     Sat Jan 17 12:06:47 2015
 
 Operator:     phy_aniso_trans_sample
 Label:        Phy Aniso Trans Sample
@@ -61,7 +61,7 @@ Inputs:       0 to 0
 Subnet:       false
 Python:       false
 Empty:        false
-Modified:     Tue Jan 13 16:05:48 2015
+Modified:     Sat Jan 17 12:21:56 2015
 
 Operator:     phy_sample
 Label:        Phy Sample
@@ -87,7 +87,7 @@ Inputs:       0 to 0
 Subnet:       false
 Python:       false
 Empty:        false
-Modified:     Tue Jan 13 16:05:56 2015
+Modified:     Sat Jan 17 12:22:27 2015
 
 Operator:     phy_trans_sample
 Label:        Phy Trans Sample
@@ -110,8 +110,9 @@ Table:        Vop
 License:      
 Extra:        surface
 Inputs:       0 to 49
+Outputs:      4
 Subnet:       false
 Python:       false
 Empty:        false
-Modified:     Sun Jan 11 16:53:36 2015
+Modified:     Fri Jan 16 15:36:39 2015
 

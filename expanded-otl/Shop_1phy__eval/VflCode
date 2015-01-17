@@ -31,6 +31,7 @@ cvex
 phy_eval(vector u = 0;
          vector v = 0;
          int bounces = 0;
+         int reverse = 0;
          export vector refl = 0;
          export vector eval = 0;
          export float pdf = 0;

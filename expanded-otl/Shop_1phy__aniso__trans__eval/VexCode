@@ -5,6 +5,9 @@
 @eval = external global <3 x double>
 @pdf = external global double
 @0 = private constant [11 x i8] c"allrefract\00"
+@1 = private constant [5 x i8] c"refl\00"
+@2 = private constant [5 x i8] c"eval\00"
+@3 = private constant [4 x i8] c"pdf\00"
 
 define private double @"ggg@FFF"(double* %dotNH, double* %sigma) nounwind alwaysinline {
 entry:
@@ -141,7 +144,7 @@ declare <3 x double> @"sub@VV"(<3 x double>, <3 x double>) nounwind readnone
 
 declare <3 x double> @"normalize@VV"(<3 x double>) nounwind
 
-define void @phy_aniso_trans_eval(<3 x double> %u, <3 x double> %v, i32 %bounces, <3 x double> %refl, <3 x double> %eval, double %pdf, <3 x double> %n, double %sigmau, double %sigmav, <3 x double> %tu, <3 x double> %tv, double %eta) nounwind {
+define void @phy_aniso_trans_eval(<3 x double> %u, <3 x double> %v, i32 %bounces, i32 %reverse, <3 x double> %refl, <3 x double> %eval, double %pdf, <3 x double> %n, double %sigmau, double %sigmav, <3 x double> %tu, <3 x double> %tv, double %eta) nounwind {
 entry:
   %0 = alloca <3 x double>
   %1 = alloca <3 x double>
@@ -162,16 +165,18 @@ entry:
 true:                                             ; preds = %entry
   %return4 = call <3 x double> @"neg@VV"(<3 x double> %u)
   %return6 = fcmp one double %eta, 1.000000e+00
-  %return7 = zext i1 %return6 to i32
   br i1 %return6, label %true8, label %end9
 
 end:                                              ; preds = %end9, %entry
-  %refl42.0 = phi <3 x double> [ %cast41, %end9 ], [ %refl, %entry ]
-  %eval43.0 = phi <3 x double> [ %cast, %end9 ], [ %eval, %entry ]
-  %pdf44.0 = phi double [ %ct_ggg, %end9 ], [ %pdf, %entry ]
-  store <3 x double> %refl42.0, <3 x double>* @refl
-  store <3 x double> %eval43.0, <3 x double>* @eval
-  store double %pdf44.0, double* @pdf
+  %"<refl>.0" = phi <3 x double> [ %cast41, %end9 ], [ %refl, %entry ]
+  %"<eval>.0" = phi <3 x double> [ %cast, %end9 ], [ %eval, %entry ]
+  %"<pdf>.0" = phi double [ %ct_ggg, %end9 ], [ %pdf, %entry ]
+  %gvalue = call <3 x double> @"_export@VSV"(i8* getelementptr inbounds ([5 x i8]* @1, i32 0, i32 0), <3 x double> %"<refl>.0") nounwind readonly
+  %gvalue43 = call <3 x double> @"_export@VSV"(i8* getelementptr inbounds ([5 x i8]* @2, i32 0, i32 0), <3 x double> %"<eval>.0") nounwind readonly
+  %gvalue45 = call double @"_export@FSF"(i8* getelementptr inbounds ([4 x i8]* @3, i32 0, i32 0), double %"<pdf>.0") nounwind readonly
+  store <3 x double> %gvalue, <3 x double>* @refl
+  store <3 x double> %gvalue43, <3 x double>* @eval
+  store double %gvalue45, double* @pdf
   ret void
 
 true8:                                            ; preds = %true
@@ -215,9 +220,13 @@ declare <3 x double> @"add@VV"(<3 x double>, <3 x double>) nounwind readnone
 
 declare <3 x double> @"frontface@VVVV"(<3 x double>, <3 x double>, <3 x double>) nounwind
 
+declare <3 x double> @"_export@VSV"(i8*, <3 x double>)
+
+declare double @"_export@FSF"(i8*, double)
+
 define void @__shader_default_arguments() {
 entry:
-  call void @phy_aniso_trans_eval(<3 x double> zeroinitializer, <3 x double> zeroinitializer, i32 0, <3 x double> zeroinitializer, <3 x double> zeroinitializer, double 0.000000e+00, <3 x double> <double 0.000000e+00, double 1.000000e+00, double 0.000000e+00>, double 1.000000e-01, double 1.000000e-01, <3 x double> <double 1.000000e+00, double 0.000000e+00, double 0.000000e+00>, <3 x double> <double 0.000000e+00, double 0.000000e+00, double 1.000000e+00>, double 1.000000e+00)
+  call void @phy_aniso_trans_eval(<3 x double> zeroinitializer, <3 x double> zeroinitializer, i32 0, i32 0, <3 x double> zeroinitializer, <3 x double> zeroinitializer, double 0.000000e+00, <3 x double> <double 0.000000e+00, double 1.000000e+00, double 0.000000e+00>, double 1.000000e-01, double 1.000000e-01, <3 x double> <double 1.000000e+00, double 0.000000e+00, double 0.000000e+00>, <3 x double> <double 0.000000e+00, double 0.000000e+00, double 1.000000e+00>, double 1.000000e+00)
   ret void
 }
 
@@ -225,6 +234,6 @@ entry:
 !version = !{!1}
 
 !0 = metadata !{metadata !"cvex"}
-!1 = metadata !{metadata !"13.0.621"}
+!1 = metadata !{metadata !"14.0.201.13"}
 
 ;_code_end

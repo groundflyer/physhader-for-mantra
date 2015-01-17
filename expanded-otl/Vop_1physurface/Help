@@ -7,6 +7,10 @@
 
 Copyright (c) 2013-2015 Roman Saldygashev <sldg.roman@gmail.com>
 
+Follow PhyShader on [GitHub|https://github.com/groundflyer/physhader-for-mantra].
+
+Check [PhyShader Wiki|https://github.com/groundflyer/physhader-for-mantra/wiki] for more info and How-To's.
+
 == Features ==
 * Energy conserving
 * Microfacet-based BSDF's
