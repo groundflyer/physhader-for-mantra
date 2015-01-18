@@ -1,8 +1,7 @@
+[![PhyShader Intro](img/happy.jpg "PhyShader Intro")](http://vimeo.com/116465165)
+
 # PhyShader
-
 Physical plausible, easy to use, compact surface shader for Mantra renderer.
-
-![PhySurface Materials](img/materials.jpg "Materials preview")
 
 ## Features
 * VOP type operator
