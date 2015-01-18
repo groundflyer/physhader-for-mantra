@@ -14,7 +14,7 @@ Physical plausible, easy to use, compact surface shader for Mantra renderer.
 * Subsurface scattering
 * Translucency
 * Dispersion
-* Thin plate shading
+* Thin sheet dielectric
 * Transparent shadows
 * Shader nesting
 * Extra image planes support
@@ -23,7 +23,7 @@ Physical plausible, easy to use, compact surface shader for Mantra renderer.
 ##Installation
 Copy `vex`,`otls` and `gallery` folders into your Houdini home directory.
 
-If you have problems with loading otl try to rebuild the otl.
+If you have troubles with asset loading, try to rebuild the otl.
 You can do it manually with command:
 
 `hotl -c expanded-otl otls/physhader.otl`
@@ -40,9 +40,14 @@ make install
 `install.bat`
 
 ## Basic usage
+![PhySurface](img/physurface_gui.png "PhySurface")
 1. Go to Material Palette
 2. Choose PhySurface Simple and move material into the scene
 3. Assign material to the object
 4. Adjust parameters
 5. ...
-5. RENDER
+6. RENDER
+
+
+## Advanced usage
+[Wiki](wiki/Home) (In progress)

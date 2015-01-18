@@ -9,3 +9,4 @@ Shop_1phy__sample	Shop/phy_sample
 Shop_1phy__trans__eval	Shop/phy_trans_eval
 Shop_1phy__trans__sample	Shop/phy_trans_sample
 Vop_1physurface	Vop/physurface
+Vop_1inobject	Vop/inobject

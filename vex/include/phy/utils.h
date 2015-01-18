@@ -44,4 +44,16 @@
 #define END_LOOP	}
 
 
+// Test for point is in object
+int
+inobject(vector p;
+         string scope;
+	 vector test_dir)
+{
+    vector hitN;
+    int hit = trace(p, test_dir, Time, "scope", scope, "N", hitN);
+    return hit && (dot(test_dir, hitN) > .0);
+}
+
+
 #endif	//__phy_utils__
