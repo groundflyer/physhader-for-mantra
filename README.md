@@ -39,16 +39,13 @@ make install
 ### Windows
 `install.bat`
 
-## Basic usage
-![PhySurface](img/physurface_gui.png "PhySurface")
-
+## Quickstart
 1. Go to Material Palette
 2. Choose PhySurface Simple and move material into the scene
 3. Assign material to the object
 4. Adjust parameters
 5. ...
 6. RENDER
-
 
 ## Advanced usage
 [Wiki](../../wiki/Home) (In progress)
