@@ -28,7 +28,7 @@ You can do it manually with command:
 
 `hotl -c expanded-otl otls/physhader.otl`
 
-or use the provided scripts.
+or use provided scripts:
 
 ### Linux
 ```
