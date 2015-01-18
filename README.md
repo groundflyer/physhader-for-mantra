@@ -41,6 +41,7 @@ make install
 
 ## Basic usage
 ![PhySurface](img/physurface_gui.png "PhySurface")
+
 1. Go to Material Palette
 2. Choose PhySurface Simple and move material into the scene
 3. Assign material to the object
@@ -50,4 +51,4 @@ make install
 
 
 ## Advanced usage
-[Wiki](wiki/Home) (In progress)
+[Wiki](../../wiki/Home) (In progress)
