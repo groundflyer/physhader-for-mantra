@@ -280,7 +280,7 @@ raytrace(vector p, dir;
 			  "raystyle", raystyle))
 		    eval = .0;
 
-    return eval;
+    return max(.0, eval);
 }
 
 // Cone case
@@ -432,15 +432,15 @@ edist(float alb, eta;
 // Calculates the point where refracted ray goes out
 // and the amount of absorption
 void
-thinP(vector p, i, nfN;
+thinP(vector p, i, nbN, tdir;
       float absty, eta, thickness;
       export vector newP;
       export float absrp)
 {
-    vector tdir = refract(i, nfN, eta);
-    float len = thickness / dot(tdir, -nfN);
-    newP = p + tdir * len;
+    float len = thickness / abs(dot(tdir, nbN));
+    newP = p + nbN * abs(len);
     absrp = exp(-absty * len);
+    if (newP == p) printf ("pNOR = %f\npTRN = %f\n", p, newP);
 }
 
 
