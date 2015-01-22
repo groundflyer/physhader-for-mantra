@@ -1,4 +1,4 @@
-# Dialog script for physurface automatically generated 01/16/15 15:36:39
+# Dialog script for physurface automatically generated 01/19/15 13:22:09
 
 {
     name	physurface
@@ -69,8 +69,8 @@
 	"           $sscope,"
 	"           $beauty,"
 	"           $opacity,"
-	"           $all,"
-	"           $f);"
+	"           $f,"
+	"           $all);"
     }
 
     input	vector	p	Position
@@ -124,8 +124,8 @@
     input	string	sscope	Scope
     output	vector	beauty	Color
     output	vector	opacity	Opacity
-    output	vectora	all	All
     output	bsdf	f	BSDF
+    output	vectora	all	All
     inputflags	p	1
     inputflags	n	1
     inputflags	i	1
@@ -175,7 +175,7 @@
     inputflags	enablemulti	1
     inputflags	ssamples	1
     inputflags	sscope	1
-    signature	"Default Inputs"	default	{ vector vector vector vector int int float float vector vector int float float int float float float int float vector int float vector float int int vector vector int int string int int int string int float int int int int float int int int int int int string vector vector vectora bsdf }
+    signature	"Default Inputs"	default	{ vector vector vector vector int int float float vector vector int float float int float float float int float vector int float vector float int int vector vector int int string int int int string int float int int int int float int int int int int int string vector vector bsdf vectora }
 
     outputoverrides	default
     {

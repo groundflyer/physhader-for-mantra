@@ -119,8 +119,8 @@ physurface(int conductor;
 	   string sscope;		  // Multiple scattering object scope
 	   export vector beauty;
 	   export vector opacity;
-	   export vector all[];
-	   export bsdf f)
+	   export bsdf f;
+	   export vector all[])
 {
     beauty = .0;
     opacity = 1.;
