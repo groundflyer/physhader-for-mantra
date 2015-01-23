@@ -462,7 +462,7 @@ physurface(int conductor;
 	{
 	    if (thin)
 		if (thick)
-		    thinP(p, ni, nbN, tdir,
+		    thinP(p, ni, nbN, nfN,
 			  kabs, eta, thickness,
 			  pTRN, _absTRN);
 		else

@@ -432,13 +432,14 @@ edist(float alb, eta;
 // Calculates the point where refracted ray goes out
 // and the amount of absorption
 void
-thinP(vector p, i, nbN, tdir;
+thinP(vector p, i, nbN, nfN;
       float absty, eta, thickness;
       export vector newP;
       export float absrp)
 {
+    vector tdir = refract(i, nfN, eta);
     float len = thickness / abs(dot(tdir, nbN));
-    newP = p + nbN * abs(len);
+    newP = p + tdir * abs(len);
     absrp = exp(-absty * len);
     if (newP == p) printf ("pNOR = %f\npTRN = %f\n", p, newP);
 }
