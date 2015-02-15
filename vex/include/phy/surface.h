@@ -41,32 +41,8 @@
 
 #define MAX_ROUGH	0.3
 
-
-// Illuminance loop
-#define START_ILLUMINANCE				  \
-    vector l, cl;					  \
-    foreach (int lid; getlights()) {			  \
-    int mask, samples = 1;						\
-    if (setcurrentlight(lid)) {						\
-    int isarealight = 0;						\
-    renderstate("light:arealight", isarealight);			\
-    if (isarealight) {							\
-    renderstate("light:maxraysamples", samples);			\
-    if (depth && depthimp != 1.)					\
-	samples = FLOOR_ALONE(samples * pow(depthimp,depth)); } }
-
-
 // Eval bsdf with current sample
 #define EVAL_BSDF(x)	eval_bsdf(x, v, l, mask)
-
-
-// Sample light with given position and normal
-#define SAMPLE_LIGHT(PP, NN)			\
-    { mask = sample_light(lid, sid,		\
-			  PP, NN, sample,	\
-			  cl, l);		\
-	l = normalize(l); }
-
 
 // Wrapper for sample_light and shadow_light
 int
@@ -118,7 +94,7 @@ illum_surface(vector p, pTRN, pSSS;
     vector _tmpTRN = .0;
     vector _tmpSSS = .0;
 
-    START_SAMPLING;
+    START_SAMPLING("nextpixel");
     SET_SAMPLE;
 
     SAMPLE_LIGHT(p, nfN);
@@ -514,7 +490,7 @@ illum_surface(vector p, n;
     
     vector accum = .0;
 
-    START_SAMPLING;
+    START_SAMPLING("nextpixel");
     SET_SAMPLE;
 
     float scale;
@@ -730,7 +706,7 @@ raySSS(vector p, n;
     vector eval = .0;
     float pdf = .0;
 
-    START_SAMPLING;
+    START_SAMPLING("nextpixel");
 
     vector pt = Rm * sampleSSS(sx, sy, v);
     vector dir = set(.0, .0, -1.);
@@ -780,7 +756,10 @@ illum_volume(vector p, v;
     vector eval = .0;
 
     START_ILLUMINANCE;
-    START_SAMPLING;
+
+    vector accum = .0;
+
+    START_SAMPLING("nextpixel");
     SET_SAMPLE;
 
     SAMPLE_LIGHT(p, v);
@@ -790,9 +769,12 @@ illum_volume(vector p, v;
     else
 	cl *= .5;
 
-    eval += cl;
+    accum += cl;
 
     END_LOOP; 	// SAMPLING
+
+    eval += accum / samples;
+
     END_LOOP; 	// ILLUMINANCE
 
     return eval;
@@ -831,7 +813,7 @@ raymarch(vector p, v, ca, cs;
 
     if (maxdist > bias * samples)
 	{
-	    START_SAMPLING;
+	    START_SAMPLING("nextpixel");
 
 	    if (maxdist > 1./sc)
 		sx *= maxdist;

@@ -36,8 +36,8 @@
 // except specified ones
 
 
-#define LOWER	0.429		// Bottom border of visible spectrum
-#define HIGHER	0.596		// Top border of visible spectrum
+#define LOWER	0.429		// The lower limit of visible spectrum
+#define HIGHER	0.596		// The higher limit of visible spectrum
 #define RANGE (HIGHER - LOWER)
 
 #define CIE_REC_709	set(3.2404542, -1.5371385, -0.4985314,	\
@@ -133,7 +133,7 @@ dispersions(vector ii, n;
 
     float etat, wl, eta;
 
-    START_SAMPLING;
+    START_SAMPLING("nextpixel");
 
     wl = samplewl(sx);
     etat = sellmeier(wl, sellmeierB, sellmeierC);

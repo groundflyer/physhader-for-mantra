@@ -34,12 +34,36 @@
 #define FLOOR_ALONE(x)	ALONE(floor(x))
 #define ALONE_VEC(x)	ALONE(max(x))
 
-#define START_SAMPLING						\
+#define START_SAMPLING(MODE)					\
     float sx, sy;						\
     for (int idx = 0; idx < samples; ++idx) {			\
-    nextsample(sid, sx, sy, "mode", "nextpixel");
+    nextsample(sid, sx, sy, "mode", MODE);
+
+
+// Illuminance loop
+#define START_ILLUMINANCE				  \
+    vector l, cl;					  \
+    foreach (int lid; getlights()) {			  \
+    int mask, samples = 1;						\
+    if (setcurrentlight(lid)) {						\
+    int isarealight = 0;						\
+    renderstate("light:arealight", isarealight);			\
+    if (isarealight) {							\
+    renderstate("light:maxraysamples", samples);			\
+    if (depth && depthimp != 1.)					\
+	samples = FLOOR_ALONE(samples * pow(depthimp,depth)); } }
+
+
+// Sample light with given position and normal
+#define SAMPLE_LIGHT(PP, NN)			\
+    { mask = sample_light(lid, sid,		\
+			  PP, NN, sample,	\
+			  cl, l);		\
+	l = normalize(l); }
+
 
 #define SET_SAMPLE	vector sample = set(sx, sy, .0);
+
 
 #define END_LOOP	}
 
