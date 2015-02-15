@@ -1,4 +1,4 @@
-# Dialog script for physurface automatically generated 01/19/15 13:22:09
+# Dialog script for physurface automatically generated 02/15/15 15:54:03
 
 {
     name	physurface
@@ -11,15 +11,11 @@
     }
 
     code {
-	"VOPstring $renderengine;"
-	"renderstate(\"renderer:renderengine\", $renderengine);"
-	""
 	"VOPint $_styleSPC = $traceSPC * ($styleSPC + 1);"
 	"VOPint $_styleTRN = $traceTRN * ($styleTRN + 1);"
 	""
 	"VOPfloat $_maxdist = $limitray ? $maxdist : -1.;"
 	"VOPint $_vsamples = $enablesingle ? $vsamples : 0;"
-	"VOPint $_dsamples = $dispersion ? $dsamples : 0;"
 	"VOPint $_ssamples = $enablemulti ? $ssamples : 0;"
 	""
 	"VOPvector $_p = $isconnected_p ? $p : P;"
@@ -49,12 +45,12 @@
 	"           $clrSSS,"
 	"           $absty,"
 	"           $g,"
+	"           $dispersion,"
 	"           $_styleSPC, $_styleTRN,"
 	"           $oblendSPC, $oblendTRN,"
 	"           $squality,"
 	"           $tsamples,"
 	"           $_vsamples,"
-	"           $_dsamples,"
 	"           $_ssamples,"
 	"           $empty,"
 	"           $accurateabs,"
@@ -116,7 +112,6 @@
     input	int	limitray	"Limit Ray Distance"
     input	float	maxdist	"Max Ray Distance"
     input	int	empty	"Empty Object"
-    input	int	dsamples	"Dispersion Samples"
     input	int	enablesingle	"Enable Single Scattering"
     input	int	vsamples	"Single Scattering Samples"
     input	int	enablemulti	"Enable Multiple Scattering"
@@ -169,13 +164,12 @@
     inputflags	limitray	1
     inputflags	maxdist	1
     inputflags	empty	1
-    inputflags	dsamples	1
     inputflags	enablesingle	1
     inputflags	vsamples	1
     inputflags	enablemulti	1
     inputflags	ssamples	1
     inputflags	sscope	1
-    signature	"Default Inputs"	default	{ vector vector vector vector int int float float vector vector int float float int float float float int float vector int float vector float int int vector vector int int string int int int string int float int int int int float int int int int int int string vector vector bsdf vectora }
+    signature	"Default Inputs"	default	{ vector vector vector vector int int float float vector vector int float float int float float float int float vector int float vector float int int vector vector int int string int int int string int float int int int int float int int int int int string vector vector bsdf vectora }
 
     outputoverrides	default
     {
@@ -654,15 +648,6 @@
 	    default	{ "-1" }
 	    disablewhen	"{ limitray == 0 }"
 	    range	{ 0! 20 }
-	    export	none
-	}
-	parm {
-	    name	"dsamples"
-	    label	"Dispersion Samples"
-	    type	integer
-	    default	{ "3" }
-	    disablewhen	"{ dispersion != 1 }"
-	    range	{ 2! 10 }
 	    export	none
 	}
     }

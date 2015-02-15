@@ -177,9 +177,6 @@ Max Ray Distance:
     TIP:
         Set the value to `0` to get pure environment reflection. No tracing will be evolved.
 
-Dispersion Samples:
-    The number of samples for dispersion evaluation.
-
 === SSS ===
 
 Single Scattering Samples:

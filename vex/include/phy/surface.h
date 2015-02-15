@@ -899,12 +899,12 @@ physurface(int conductor;
 	   vector clrSSS;	// Scattering coefficient
 	   vector absty;	// Absorption coefficient
 	   float g;		// Scattring phase
-	   int styleSPC, styleTRN;   // How to perform reflection/refraction (see phy_shading.h)
+	   int dispersion;
+	   int styleSPC, styleTRN;   // How to perform reflection/refraction
 	   int oblendSPC, oblendTRN; // Opacity blending
 	   int squality;	// Sampling quality (see sampling_quality)
 	   int tsamples;	// Number of ray-tracing samples
 	   int vsamples;	// Number of single scattering samples
-	   int dsamples;	// Number of dispersion samples
 	   int ssamples;	// Number of multiple scattering samples
 	   int empty;
 	   int accurateabs;	// Accurate absorption
@@ -929,6 +929,11 @@ physurface(int conductor;
     vector fullTRN = .0;
     vector fullSSS = .0;
 
+    
+    string renderengine;
+    renderstate("renderer:renderengine", renderengine);
+    int sid = renderengine == "micropoly" ? newsampler() : SID;
+
 
     float
 	kDFS = .0,
@@ -942,8 +947,18 @@ physurface(int conductor;
 	ft = 1.;
 
     // IOR
+    float etat = max(1.0000016, ior.x);
+
+    // Dispersion
+    vector dtint = 1.;
+    if (dispersion)
+	{
+	    float wl = samplewl(rand(sid));
+	    etat = sellmeier(wl, sellmeierB, sellmeierC);
+	    dtint = wl2rgb(wl);
+	}
+
     float
-	etat = max(1.0000016, ior.x),
 	etai = ior.y,
 	etak = ior.z,
 	eta = etai/etat;
@@ -1031,9 +1046,6 @@ physurface(int conductor;
     // Single scattering eval
     vector singlescattering = .0;
 
-    // Dispersions
-    vector dcolors[], tdirs[];
-
     // Ray is directed inside object
     int	enter = dot(n, ni) < .0;
 
@@ -1043,7 +1055,6 @@ physurface(int conductor;
     int _tsamples = sampling_quality(squality, tsamples, sigma);
     int _vsamples = vsamples;
     int _ssamples = ssamples;
-    int _dsamples = dsamples;
 
     // Is the total internal reflection case
     int internal = rdir == tdir;
@@ -1057,7 +1068,6 @@ physurface(int conductor;
 	    float factor = pow(depthimp, depth);
 
 	    _tsamples = FLOOR_ALONE(tsamples * factor);
-	    _dsamples = FLOOR_ALONE(dsamples * factor);
 	    _ssamples = FLOOR_ALONE(ssamples * factor);
 	    _vsamples = FLOOR_ALONE(vsamples * factor);
 	}
@@ -1071,10 +1081,6 @@ physurface(int conductor;
     bsdf f_TRN = specular(tdir);
     bsdf f_SSS = diffuse(nbN);
 
-    string renderengine;
-    renderstate("renderer:renderengine", renderengine);
-
-    int sid = renderengine == "micropoly" ? newsampler() : SID;
 
     // When specular is allowed
     // In case of total internal reflection
@@ -1088,13 +1094,6 @@ physurface(int conductor;
 	!conductor	&&
 	!enableDFS	&&
 	enableTRN;
-	
-    // When dispersion is allowed
-    int allowdispersion =
-	allowTRN	&&
-	solid		&&
-	(_dsamples > 1)	&&
-	issmooth;
 
     // When SSS is allowed
     int allowSSS =
@@ -1112,23 +1111,6 @@ physurface(int conductor;
     int translucent =
 	enableSSS	&&
 	thin;
-
-    if (allowdispersion)
-	{
-	    dispersions(ni, n,
-			sellmeierB, sellmeierC,
-			enter,
-			sid, _dsamples,
-			etai,
-			dcolors, tdirs);
-
-	    // For Fresnel refletance use
-	    // Mid wavelength eta of interior
-	    etat = sellmeier(RANGE *.5 + LOWER,
-			     sellmeierB, sellmeierC);
-	    // Update eta
-	    eta = etai/etat;
-	}
 
     // Get tracing masks for non-gather tracing
     if(!renderstate("object:reflectmask", scopeSPC))
@@ -1175,17 +1157,7 @@ physurface(int conductor;
     if(issmooth)
 	{
 	    f_SPC = specular(rdir);
-
-	    if (allowdispersion)
-		{
-		    for (int idx = 0; idx < _dsamples; ++idx)
-			f_TRN += dcolors[idx] *
-			    specular(tdirs[idx]);
-
-		    f_TRN *= 1. / (float)_dsamples;
-		}
-	    else
-		f_TRN = specular(tdir);
+	    f_TRN = specular(tdir);
 	}
     else
 	{
@@ -1260,6 +1232,8 @@ physurface(int conductor;
     // Refraction
     if (allowTRN && styleTRN)
 	{
+	    int do_trace = 1;
+
 	    if (thin)
 		if (thick)
 		    thinP(p, ni, nbN, nfN,
@@ -1274,6 +1248,7 @@ physurface(int conductor;
 				// Don't pathtrace refraction
 				// because already used opacity
 				f_TRN *= .0;
+				do_trace = 0;
 			    }
 		    }
 	    else if (kabs > .0)
@@ -1318,40 +1293,18 @@ physurface(int conductor;
 			}
 		}
 
-	    // Setup dispersion
-	    if (allowdispersion)
-		{
-		    for (int idx = 0; idx < _dsamples; ++idx)
-			traceTRN += dcolors[idx] *
-			    raytrace(pTRN, tdirs[idx],
-				     maxdist,
-				     oblendTRN, styleTRN,
-				     "refract", scopeTRN, gvarTRN);
-
-		    traceTRN /= _dsamples;
-		}
-	    else
-		if (issmooth)
-		    {
-			// In other cases opacity is used
-			if (thick || solid)
-			    traceTRN = raytrace(pTRN, tdir,
-						maxdist,
-						oblendTRN, styleTRN,
-						"refract", scopeTRN, gvarTRN);
-		    }
-		else
-		    traceTRN = raytrace(pTRN, tdir,
-					angle, maxdist,
-					_tsamples, oblendTRN, styleTRN,
-					"refract", scopeTRN, gvarTRN);
+	    if (do_trace)
+		traceTRN = raytrace(pTRN, tdir,
+				    maxdist,
+				    oblendTRN, styleTRN,
+				    "refract", scopeTRN, gvarTRN);
 	}
 
 
     // The base factors
     factorDFS = clrDFS * kDFS;
     factorSPC = clrSPC * kSPC * fr * gafmask;
-    factorTRN = kTRN * ft * gafrefr;
+    factorTRN = kTRN * ft * gafrefr * dtint;
     factorSSS = kSSS;
 
     // Translucency

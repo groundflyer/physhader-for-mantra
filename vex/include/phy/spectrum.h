@@ -119,38 +119,6 @@ samplewl(float sx)
 }
 
 
-// Compute dispresion directions and hues
-void
-dispersions(vector ii, n;
-	    vector sellmeierB, sellmeierC;
-	    int enter;
-	    int sid, samples;
-	    float etai;
-	    export vector evals[];
-	    export vector tdirs[])
-{
-    vector hue, tdir;
-
-    float etat, wl, eta;
-
-    START_SAMPLING("nextpixel");
-
-    wl = samplewl(sx);
-    etat = sellmeier(wl, sellmeierB, sellmeierC);
-
-    hue = wl2rgb(wl);
-
-    eta = etai/etat;
-
-    tdir = refract(ii, n, eta);
-
-    push(evals, hue);
-    push(tdirs, tdir);
-
-    END_LOOP;
-}
-
-
 // Load predifined Sellmeier coefficients
 // Possible choice options
 //	0 - Quartz
