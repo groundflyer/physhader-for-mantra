@@ -22,19 +22,6 @@ Physical plausible, easy to use, compact surface shader for Mantra renderer.
 ##Installation
 Copy `vex`,`otls` and `gallery` folders into your Houdini home directory.
 
-If you have troubles with asset loading, try to rebuild the otl.
-You can do it manually with command:
-
-`hotl -c expanded-otl otls/physhader.otl`
-
-or use provided scripts:
-
-### Linux
-```
-make
-make install
-```
-
 ### Windows
 `install.bat`
 

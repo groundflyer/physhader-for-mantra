@@ -61,11 +61,34 @@
 			  cl, l);		\
 	l = normalize(l); }
 
+// Eval bsdf with current sample
+#define EVAL_BSDF(x)	eval_bsdf(x, v, l, mask)
 
 #define SET_SAMPLE	vector sample = set(sx, sy, .0);
 
-
 #define END_LOOP	}
+
+
+// Wrapper for sample_light and shadow_light
+int
+sample_light(int lid, sid;
+	     vector p, n, sample;
+	     export vector cl, l)
+{
+    vector lp, eval;
+    float scale;
+
+    int mask = sample_light(lid, p, sample,
+			    Time, lp, eval, scale);
+
+    cl = eval * scale / ALONE_VEC(eval);
+    l = lp - p;
+    cl *= shadow_light(lid, p, l, Time,
+		       "N", n,
+		       "SID", sid);
+
+    return mask;
+}
 
 
 // Test for point is in object
