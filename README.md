@@ -22,9 +22,6 @@ Physical plausible, easy to use, compact surface shader for Mantra renderer.
 ##Installation
 Copy `vex`,`otls` and `gallery` folders into your Houdini home directory.
 
-### Windows
-`install.bat`
-
 ## Quickstart
 1. Go to Material Palette
 2. Choose PhySurface Simple and move material into the scene
