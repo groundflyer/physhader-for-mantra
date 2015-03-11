@@ -130,20 +130,36 @@ illum_surface(vector p, pTRN, pSSS;
 }
 
 
-// Conductor fresnel
+// Complex Fresnel term
+// n = etai/etat
+// k - extinction coefficient
 float
-cfresnel(vector v, n;
-	 float eta, k)
+cfresnel(vector v, normal;
+	 float n, k)
 {
-    float
-	cosi = dot(v, n),
-	tmp = eta * eta + k * k,
-	cosi2 = cosi * cosi,
-	tmp1 = tmp * cosi2,
-	tmp2 = 2 * eta * cosi,
-	par = (tmp1 - tmp2 + 1.0) / (tmp1 + tmp2 + 1.0),
-	per = (tmp - tmp2 + cosi2) / (tmp + tmp2 + cosi2);
-    return (par + per) / 2.0;
+    float u = dot(v, normal);
+    float n2 = n * n;
+    float k2 = k * k;
+    float u2 = u * u;
+    float nk4 = 4. * n2 * k2;
+    float n2minusk2 = n2 - k2;
+    float u2minus1 = u2 - 1.;
+    float tmp01 = n2minusk2 + u2minus1;
+    float tmp2 = tmp01 * tmp01;
+    float tmp2nk4 = tmp2 + nk4;
+    float tmp3 = tmp2nk4 + n2minusk2 + u2minus1;
+    float a2 = sqrt(tmp3) / 2.;
+    float tmp4 = tmp2nk4 - n2 + k2 - u2 + 1.;
+    float b2 = sqrt(tmp4) / 2.;
+    float a = sqrt(a2);
+    float aminusu = a - u;
+    float aplusu = a + u;
+    float F1 = (aminusu*aminusu + b2) / (aplusu*aplusu + b2) / 2.;
+    float u1 = 1. / u;
+    float aminusu1 = aminusu + u1;
+    float aplusu1 = aplusu - u1;
+    float F2 = (aplusu1*aplusu1 + b2) / (aminusu1*aminusu1 + b2) + 1.;
+    return F1 * F2;
 }
 
 
@@ -1105,7 +1121,7 @@ physurface(int conductor;
     if(conductor)
 	{
 	    kSPC = alb;
-	    fr = cfresnel(ni, nfN, etat, etak);
+	    fr = cfresnel(v, nfN, eta, etak);
 	    clrSPC = _clrsurf;
 	}
     else
