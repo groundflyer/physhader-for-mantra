@@ -36,7 +36,7 @@
 
 #define START_SAMPLING(MODE)					\
     float sx, sy;						\
-    for (int idx = 0; idx < samples; ++idx) {			\
+    for (int _i = 0; _i < samples; ++_i) {			\
     nextsample(sid, sx, sy, "mode", MODE);
 
 

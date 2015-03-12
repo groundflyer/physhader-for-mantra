@@ -213,44 +213,46 @@ absorption(vector p, dir, kabs;
 // Style choices:
 //	1 - Gather
 //	2 - Occlusion
+#define TRACE_FLAGS(N) "scope", scope,			\
+	"samplefilter", sfilter,			\
+	"maxdist", maxdist,				\
+	"samples", N,					\
+	"raystyle", raystyle
+
+#define TRACE_GATHER trace(p, dir, Time,		\
+			   TRACE_FLAGS(1),		\
+			   variable, hitCf)
+
+#define TRACE_OCCL trace(p, dir, Time, TRACE_FLAGS(1))
+
+#define INIT_TRACE vector hitCf = .0;			\
+    vector eval = .0;					\
+    int mask = PBR_REFRACT_MASK;			\
+    if (raystyle == "reflect") mask = PBR_REFLECT_MASK; \
+    string sfilter = oblend ? "opacity" : "closest"
+
 // Delta function case
 vector
 raytrace(vector p, dir;
 	 float maxdist;
 	 int oblend, style;
-	 string raystyle, scope, gathervar)
+	 string raystyle, scope, variable)
 {
-    vector hitCf = .0;
+    INIT_TRACE;
 
-    int mask = PBR_REFRACT_MASK;
+    vector env = resolvemissedray(dir, Time, mask);
 
-    if (raystyle == "reflect")
-	mask = PBR_REFLECT_MASK;
-
-    vector eval = resolvemissedray(dir, Time, mask);
-
-    string sfilter = oblend ? "opacity" : "closest";
-
-    if (maxdist != .0)
-	if (style == 1)
-	    {
-		if (trace(p, dir, Time,
-			  "scope", scope,
-			  "samplefilter", sfilter,
-			  "maxdist", maxdist,
-			  "samples", 1,
-			  "raystyle", raystyle,
-			  gathervar, hitCf))
-		    eval = hitCf;
-	    }
+    if (maxdist == .0)
+	eval = env;
+    else if (style)
+	{
+	    if (style == 1)
+		if (TRACE_GATHER) eval = hitCf;
+		else eval = env;
 	    else
-		if (trace(p, dir, Time,
-			  "scope", scope,
-			  "samplefilter", sfilter,
-			  "maxdist", maxdist,
-			  "samples", 1,
-			  "raystyle", raystyle))
-		    eval = .0;
+		if (TRACE_OCCL) eval = .0;
+		else eval = env;
+	}
 
     return max(.0, eval);
 }
@@ -260,18 +262,11 @@ vector
 raytrace(vector p, dir;
 	 float angle, maxdist;
 	 int samples, oblend, style;
-	 string raystyle, scope, gathervar)
+	 string raystyle, scope, variable)
 {
-    vector hitCf = .0;
-    vector eval = .0;
-    int mask = PBR_REFRACT_MASK;
-
-    if (raystyle == "reflect")
-	mask = PBR_REFLECT_MASK;
+    INIT_TRACE;
 
     vector env = resolvemissedray(dir, Time, mask, "angle", angle);
-
-    string sfilter = oblend ? "opacity" : "closest";
 
     if (maxdist == .0)
 	eval = env;
@@ -282,14 +277,10 @@ raytrace(vector p, dir;
 		vector raydir;
 
 		gather(p, dir,
-		       "scope", scope,
-		       "samplefilter", sfilter,
+		       TRACE_FLAGS(samples),
 		       "angle", angle,
-		       "maxdist", maxdist,
-		       "samples", samples,
-		       "raystyle", raystyle,
-		       gathervar, hitCf,
-		       "variancevar", gathervar,
+		       variable, hitCf,
+		       "variancevar", variable,
 		       "ray:direction", raydir)
 		    {
 			tmp += hitCf;
@@ -303,15 +294,89 @@ raytrace(vector p, dir;
 	    }
 	else
 	    eval = 2.0 * occlusion(p, dir,
-				   "samplefilter", sfilter,
-				   "angle", angle,
-				   "maxdist", maxdist,
-				   "samples", samples,
-				   "scope", scope,
+				   TRACE_FLAGS(samples),
 				   "background", 1.)
 		* env;
 
     return max(.0, eval);
+}
+
+
+// Use BSDF
+#define SAMPLE_BSDF sample_bsdf(f, v, dir, brdf, pdf, type, sx, sy, mask)
+#define CONTRIBUTE eval += pdf * brdf * tmp; summ += pdf
+#define AVERAGE eval /= summ
+
+#define VARIANCEAA if (dorayvariance)					\
+	{ float lum = luminance(eval) / summ;				\
+	    if (isgamma) lum = sqrt(lum);				\
+	    int _i1 = _i + 1;						\
+	    if (_i1 >= minraysamples)					\
+		{ int samplesize;					\
+		    float mean;						\
+		    float newvar = variance(lum - prevlum,		\
+					    mean, samplesize);		\
+		    var = (var * _i + newvar) / (_i1);			\
+		    if (var <= variance*variance) break; }		\
+	    prevlum = lum; }
+
+#define FINALIZE_SAMPLING CONTRIBUTE; VARIANCEAA; END_LOOP; AVERAGE
+
+vector
+raytrace(bsdf f;
+	 vector p, v;
+	 float maxdist;
+	 int sid, samples, oblend, style;
+	 string raystyle, scope, variable;
+	 int dorayvariance, minraysamples;
+	 float variance;
+	 int isgamma)
+{
+    INIT_TRACE;
+
+    int type;
+    vector dir, brdf, tmp;
+    float pdf;
+    float summ = .0;
+    float prevlum = .0;
+    float var = .0;
+
+    if (maxdist == .0)
+	{
+	    START_SAMPLING("nextpixel");
+	    SAMPLE_BSDF;
+
+	    tmp = resolvemissedray(dir, Time, mask);
+
+	    FINALIZE_SAMPLING;
+	}
+    else if (style)
+	if (style == 1)
+	    {
+		START_SAMPLING("nextpixel");
+		SAMPLE_BSDF;
+
+		if (TRACE_GATHER)
+		    tmp = hitCf;
+		else
+		    tmp = resolvemissedray(dir, Time, mask);
+
+		FINALIZE_SAMPLING;
+	    }
+	else
+	    {
+		START_SAMPLING("nextpixel");
+		SAMPLE_BSDF;
+
+		if (TRACE_OCCL)
+		    tmp = .0;
+		else
+		    tmp = resolvemissedray(dir, Time, mask);
+
+		FINALIZE_SAMPLING;
+	    }
+
+    return eval;
 }
 
 
@@ -724,9 +789,9 @@ raySSS(vector p, n;
 
 	    float weight = exp(-r*r * .5 / bssrdf.mfp)
 		/ (1. + abs(dot(n, hitN)));
-	    vector hitC = illum_surface(hitP, hitN, eta, sid,
+	    vector hitCf = illum_surface(hitP, hitN, eta, sid,
 					depth, depthimp);
-	    eval += weight * hitC * bssrdf->eval(Xr, n);
+	    eval += weight * hitCf * bssrdf->eval(Xr, n);
 	    pdf += weight;
 	}
 
@@ -831,40 +896,6 @@ raymarch(vector p, v, ca, cs;
 }
 
 
-// Return number of samples
-// by mode.
-// mode choices:
-//	0 - Auto
-//	1 - Minimum
-//	2 - Maximum
-//	3 - Manual
-// If mode = Auto use sigma to compute mean
-int
-sampling_quality(int mode;
-		 int number;
-		 float sigma)
-{
-    int
-	eval = number,
-	maxsamples = 1,
-	minsamples = 1;
-
-    renderstate("light:maxraysamples", maxsamples);
-    renderstate("light:minraysamples", minsamples);
-
-    if (mode != 3)
-	if (mode == 0)
-	    eval = floor(lerp(minsamples, maxsamples,
-			      max(sigma / MAX_ROUGH, MAX_ROUGH)));
-	else if (mode == 1)
-	    eval = minsamples;
-	else
-	    eval = maxsamples;
-
-    return eval;
-}
-
-
 // Invert hue of given RGB
 vector
 invert_hue(vector color)
@@ -898,7 +929,8 @@ physurface(int conductor;
 	   int vsamples;	// Number of single scattering samples
 	   int ssamples;	// Number of multiple scattering samples
 	   int empty;
-	   int accurateabs;	// Accurate absorption
+	   int useF;		// Use BSDF to compute reflection/refraction
+	   int accurateabs;	// Accurate glossy absorption
 	   float depthimp;	// Depth importance
 	   float maxdist;	// Maximum tracing distance
 	   vector p;		// Point position
@@ -1042,8 +1074,34 @@ physurface(int conductor;
 
     int depth = getraylevel() + getglobalraylevel();
 
+    // tracing samples
+    float variance;
+    renderstate("object:variance", variance);
+    int dorayvariance;
+    renderstate("object:dorayvariance", dorayvariance);
+    string colorspace;
+    renderstate("renderer:colorspace", colorspace);
+    int isgamma = colorspace == "gamma";
+    int maxraysamples, minraysamples;
+    renderstate("light:maxraysamples", maxraysamples);
+    renderstate("light:minraysamples", minraysamples);
+
     // Copied variables starts with "_"
-    int _tsamples = sampling_quality(squality, tsamples, sigma);
+    int _tsamples = tsamples;
+    if (!issmooth)
+	if (useF && !squality && dorayvariance)
+	    // _tsamples as max ray samples
+	    _tsamples = maxraysamples;
+	else
+	    {
+		if (squality == 0)
+		    _tsamples = floor(lerp(minraysamples, maxraysamples,
+					   max(sigma / MAX_ROUGH,
+					       MAX_ROUGH)));
+		else if (squality == 1) _tsamples = minraysamples;
+		else if (squality == 2) _tsamples = maxraysamples;
+	    }
+
     int _vsamples = vsamples;
     int _ssamples = ssamples;
 
@@ -1214,6 +1272,14 @@ physurface(int conductor;
 				maxdist,
 				oblendSPC, styleSPC,
 				"reflect", scopeSPC, gvarSPC);
+	else if (useF)
+	    traceSPC = raytrace(f_SPC,
+				p, v,
+				maxdist,
+				sid, _tsamples, oblendSPC, styleSPC,
+				"reflect", scopeSPC, gvarSPC,
+				dorayvariance, minraysamples,
+				variance, isgamma);
 	else
 	    traceSPC = raytrace(p, rdir,
 				angle, maxdist,
@@ -1285,10 +1351,24 @@ physurface(int conductor;
 		}
 
 	    if (do_trace)
-		traceTRN = raytrace(pTRN, tdir,
-				    maxdist,
-				    oblendTRN, styleTRN,
-				    "refract", scopeTRN, gvarTRN);
+		if (issmooth)
+		    traceTRN = raytrace(pTRN, tdir,
+					maxdist,
+					oblendTRN, styleTRN,
+					"refract", scopeTRN, gvarTRN);
+		else if (useF)
+		    traceTRN = raytrace(f_TRN,
+					p, v,
+					maxdist,
+					sid, _tsamples, oblendTRN, styleTRN,
+					"refract", scopeTRN, gvarTRN,
+					dorayvariance, minraysamples,
+					variance, isgamma);
+		else
+		    traceTRN = raytrace(p, tdir,
+					angle, maxdist,
+					_tsamples, oblendTRN, styleTRN,
+					"refract", scopeTRN, gvarTRN);
 	}
 
 
