@@ -163,50 +163,7 @@ cfresnel(vector v, normal;
 }
 
 
-// Volume absorption
-// Delta case
-vector
-absorption(vector p, dir, kabs;
-	   float maxdist;
-	   string scope)
-{
-    vector eval = .0;
-    float raylength = .0;
-    if(trace(p, dir, Time,
-	     "samplefilter", "closest",
-	     "scope", scope,
-	     "samples", 1,
-	     "maxdist", maxdist,
-	     "raystyle", "refract",
-	     "ray:length", raylength))
-	eval = exp(-raylength * kabs);
 
-    return eval;
-}
-
-// Cone case
-vector
-absorption(vector p, dir, kabs;
-	   float maxdist, angle;
-	   int samples;
-	   string scope)
-{
-    vector eval = .0;
-    float raylength = .0;
-    gather(p, dir,
-	   "samplefilter", "closest",
-	   "scope", scope,
-	   "samples", samples,
-	   "maxdist", maxdist,
-	   "angle", angle,
-	   "raystyle", "refract",
-	   "ray:length", raylength)
-	{
-	    eval += exp(-raylength * kabs);
-	}
-
-    return eval / samples;
-}
 
 
 // Trace reflection/refraction
@@ -221,22 +178,31 @@ absorption(vector p, dir, kabs;
 
 #define TRACE_GATHER trace(p, dir, Time,		\
 			   TRACE_FLAGS(1),		\
-			   variable, hitCf)
+			   variable, hitCf,		\
+			   "variancevar", variable)
 
 #define TRACE_OCCL trace(p, dir, Time, TRACE_FLAGS(1))
+
+#define TRACE_ABSRP trace(p, dir, Time,			\
+			  TRACE_FLAGS(1),		\
+			  variable, hitCf,		\
+			  "ray:length", raylength)
 
 #define INIT_TRACE vector hitCf = .0;			\
     vector eval = .0;					\
     int mask = PBR_REFRACT_MASK;			\
     if (raystyle == "reflect") mask = PBR_REFLECT_MASK; \
-    string sfilter = oblend ? "opacity" : "closest"
+    string sfilter = oblend ? "opacity" : "closest";	\
+    int doabs = max(absty) > .0;			\
+			   float raylength = .0;
 
 // Delta function case
 vector
 raytrace(vector p, dir;
 	 float maxdist;
 	 int oblend, style;
-	 string raystyle, scope, variable)
+	 string raystyle, scope, variable;
+	 vector absty)
 {
     INIT_TRACE;
 
@@ -247,11 +213,20 @@ raytrace(vector p, dir;
     else if (style)
 	{
 	    if (style == 1)
-		if (TRACE_GATHER) eval = hitCf;
-		else eval = env;
+		if (doabs)
+		    {
+			if(TRACE_ABSRP)
+			    eval = hitCf * exp(-raylength * absty);
+		    }
+		else
+		    {
+			if (TRACE_GATHER) eval = hitCf;
+			else eval = env;
+		    }
 	    else
 		if (TRACE_OCCL) eval = .0;
 		else eval = env;
+
 	}
 
     return max(.0, eval);
@@ -262,7 +237,8 @@ vector
 raytrace(vector p, dir;
 	 float angle, maxdist;
 	 int samples, oblend, style;
-	 string raystyle, scope, variable)
+	 string raystyle, scope, variable;
+	 vector absty)
 {
     INIT_TRACE;
 
@@ -276,18 +252,33 @@ raytrace(vector p, dir;
 		vector tmp = .0;
 		vector raydir;
 
-		gather(p, dir,
-		       TRACE_FLAGS(samples),
-		       "angle", angle,
-		       variable, hitCf,
-		       "variancevar", variable,
-		       "ray:direction", raydir)
+		if (doabs)
 		    {
-			tmp += hitCf;
+			gather(p, dir,
+			       TRACE_FLAGS(samples),
+			       "angle", angle,
+			       variable, hitCf,
+			       "variancevar", variable,
+			       "ray:length", raylength)
+			    {
+				tmp += hitCf * exp(-raylength * absty);
+			    }
 		    }
 		else
 		    {
-			tmp += resolvemissedray(raydir, Time, mask);
+			gather(p, dir,
+			       TRACE_FLAGS(samples),
+			       "angle", angle,
+			       variable, hitCf,
+			       "variancevar", variable,
+			       "ray:direction", raydir)
+			    {
+				tmp += hitCf;
+			    }
+			else
+			    {
+				tmp += resolvemissedray(raydir, Time, mask);
+			    }
 		    }
 
 		eval = tmp / samples;
@@ -330,7 +321,8 @@ raytrace(bsdf f;
 	 string raystyle, scope, variable;
 	 int dorayvariance, minraysamples;
 	 float variance;
-	 int isgamma)
+	 int isgamma;
+	 vector absty)
 {
     INIT_TRACE;
 
@@ -356,10 +348,18 @@ raytrace(bsdf f;
 		START_SAMPLING("nextpixel");
 		SAMPLE_BSDF;
 
-		if (TRACE_GATHER)
-		    tmp = hitCf;
+		if (doabs)
+		    {
+			if(TRACE_ABSRP)
+			    tmp = hitCf * exp(-raylength * absty);
+		    }
 		else
-		    tmp = resolvemissedray(dir, Time, mask);
+		    {
+			if (TRACE_GATHER)
+			    tmp = hitCf;
+			else
+			    tmp = resolvemissedray(dir, Time, mask);
+		    }
 
 		FINALIZE_SAMPLING;
 	    }
@@ -377,6 +377,49 @@ raytrace(bsdf f;
 	    }
 
     return eval;
+}
+
+
+#define INIT_ABSRP float raylength = 1.;	\
+    string sfilter = "closest";			\
+    string raystyle = "refract";		\
+    vector eval = .0
+
+// Volume absorption
+// Delta case
+vector
+absorption(vector p, dir, kabs;
+	   float maxdist;
+	   string scope)
+{
+    INIT_ABSRP;
+
+    if(trace(p, dir, Time,
+	     TRACE_FLAGS(1),
+	     "ray:length", raylength))
+	eval = exp(-raylength * kabs);
+
+    return eval;
+}
+
+// Cone case
+vector
+absorption(vector p, dir, kabs;
+	   float maxdist, angle;
+	   int samples;
+	   string scope)
+{
+    INIT_ABSRP;
+
+    gather(p, dir,
+	   TRACE_FLAGS(samples),
+	   "angle", angle,
+	   "ray:length", raylength)
+	{
+	    eval += exp(-raylength * kabs);
+	}
+
+    return eval / samples;
 }
 
 
@@ -707,14 +750,6 @@ getRSP(vector p, n;
        float mfp)
 {
     vector eval = p - n * mfp;
-
-    // float bias;
-    // renderstate("renderer:raybias", bias);
-    // float depth = rayhittest(p, eval - p, bias);
-
-    // if (depth > .0)
-    // 	eval = p - n * depth * .99;
-
     return eval;
 }
 
@@ -998,10 +1033,10 @@ physurface(int conductor;
 
     // Treat surface as perfect smooth
     // if specular rougness is below this value
-    int issmooth = roughSPC <= SMOOTH_THRESHOLD;
+    int smooth = roughSPC <= SMOOTH_THRESHOLD;
 
     // When reflections/refraction are anisotropic
-    int isanisotropic = (anisobias != .0) && !issmooth;
+    int isanisotropic = (anisobias != .0) && !smooth;
 
     // Anisotropy roughness
     float
@@ -1088,7 +1123,7 @@ physurface(int conductor;
 
     // Copied variables starts with "_"
     int _tsamples = tsamples;
-    if (!issmooth)
+    if (!smooth)
 	if (useF && !squality && dorayvariance)
 	    // _tsamples as max ray samples
 	    _tsamples = maxraysamples;
@@ -1161,6 +1196,26 @@ physurface(int conductor;
 	enableSSS	&&
 	thin;
 
+    // disable separate absorption and single scattering
+    // for Raytrace/Micropoly renderers
+    int doAbsTRN = enter || internal;
+
+    int oAbs =
+	kabs > .0	&&
+	(renderengine == "micropoly" ||
+	 renderengine == "raytrace");
+
+    int oAbsDeltaTRN = oAbs && doAbsTRN && styleTRN;
+
+    // internal reflection
+    int oAbsDeltaSPC = oAbs && !doAbsTRN && styleSPC;
+
+    // glossy absorption
+    int oAbsGloss = !smooth && accurateabs && oAbs;
+
+    int oAbsGlossTRN = oAbsGloss && oAbsDeltaTRN;
+    int oAbsGlossSPC = oAbsGloss && oAbsDeltaSPC;
+
     // Get tracing masks for non-gather tracing
     if(!renderstate("object:reflectmask", scopeSPC))
 	scopeSPC = "scope:default";
@@ -1203,7 +1258,7 @@ physurface(int conductor;
 			  "eta", eta);
 
     // BSDFs of reflections and refractions
-    if(issmooth)
+    if(smooth)
 	{
 	    f_SPC = specular(rdir);
 	    f_TRN = specular(tdir);
@@ -1267,11 +1322,12 @@ physurface(int conductor;
 
     // Ray-tracing specular
     if (allowSPC && styleSPC)
-	if (issmooth)
+	if (smooth)
 	    traceSPC = raytrace(p, rdir,
 				maxdist,
 				oblendSPC, styleSPC,
-				"reflect", scopeSPC, gvarSPC);
+				"reflect", scopeSPC, gvarSPC,
+				oAbsDeltaSPC ? _absty : .0);
 	else if (useF)
 	    traceSPC = raytrace(f_SPC,
 				p, v,
@@ -1279,12 +1335,14 @@ physurface(int conductor;
 				sid, _tsamples, oblendSPC, styleSPC,
 				"reflect", scopeSPC, gvarSPC,
 				dorayvariance, minraysamples,
-				variance, isgamma);
+				variance, isgamma,
+				oAbsGlossSPC ? _absty : .0);
 	else
 	    traceSPC = raytrace(p, rdir,
 				angle, maxdist,
 				_tsamples, oblendSPC, styleSPC,
-				"reflect", scopeSPC, gvarSPC);
+				"reflect", scopeSPC, gvarSPC,
+				oAbsGlossSPC ? _absty : .0);
 
     // Refraction
     if (allowTRN && styleTRN)
@@ -1298,7 +1356,7 @@ physurface(int conductor;
 			  pTRN, _absTRN);
 		else
 		    {
-			if (issmooth)
+			if (smooth)
 			    {
 				opacity = 1. - kTRN * ft * clrTRN;
 
@@ -1313,21 +1371,18 @@ physurface(int conductor;
 		    vector abstmp = 1.;
 		    vector tmpsss = .0;
 
-		    if (accurateabs && !issmooth)
-			{
+		    if (!oAbsGloss)
+			if (accurateabs && !smooth)
 			    abstmp = absorption(p, absdir,
 						_absty,
 						maxdist, angle,
 						_tsamples,
 						scopeTRN);
-			}
-		    else
-			{
+			else
 			    abstmp = absorption(p, absdir,
 						_absty,
 						maxdist,
 						scopeTRN);
-			}
 
 
 		    if (allowsinglesss)
@@ -1351,24 +1406,27 @@ physurface(int conductor;
 		}
 
 	    if (do_trace)
-		if (issmooth)
+		if (smooth)
 		    traceTRN = raytrace(pTRN, tdir,
 					maxdist,
 					oblendTRN, styleTRN,
-					"refract", scopeTRN, gvarTRN);
+					"refract", scopeTRN, gvarTRN,
+					oAbsDeltaTRN ? _absty : .0);
 		else if (useF)
 		    traceTRN = raytrace(f_TRN,
-					p, v,
+					pTRN, v,
 					maxdist,
 					sid, _tsamples, oblendTRN, styleTRN,
 					"refract", scopeTRN, gvarTRN,
 					dorayvariance, minraysamples,
-					variance, isgamma);
+					variance, isgamma,
+					oAbsGlossTRN ? _absty : .0);
 		else
-		    traceTRN = raytrace(p, tdir,
+		    traceTRN = raytrace(pTRN, tdir,
 					angle, maxdist,
 					_tsamples, oblendTRN, styleTRN,
-					"refract", scopeTRN, gvarTRN);
+					"refract", scopeTRN, gvarTRN,
+					oAbsGlossTRN ? _absty : 0);
 	}
 
 
