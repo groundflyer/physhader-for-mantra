@@ -34,6 +34,7 @@
 #include <phy/utils.h>
 #include <phy/spectrum.h>
 #include <phy/microfacet.h>
+#include <phy/volume.h>
 
 
 // Treat surface smooth if roughness below this value
@@ -385,7 +386,7 @@ raytrace(bsdf f;
     string raystyle = "refract";		\
     vector eval = .0
 
-// Volume absorption
+// volume absorption
 // Delta case
 vector
 absorption(vector p, dir, kabs;
@@ -836,101 +837,6 @@ raySSS(vector p, n;
 }
 
 
-// Direct lighting for volume
-vector
-illum_volume(vector p, v;
-	     float g;
-	     int sid;
-	     int depth;
-	     float depthimp)
-{
-    vector eval = .0;
-
-    START_ILLUMINANCE;
-
-    vector accum = .0;
-
-    START_SAMPLING("nextpixel");
-    SET_SAMPLE;
-
-    SAMPLE_LIGHT(p, v);
-
-    if (g != 0)
-	cl *= phase(dot(l,v), g);
-    else
-	cl *= .5;
-
-    accum += cl;
-
-    END_LOOP; 	// SAMPLING
-
-    eval += accum / samples;
-
-    END_LOOP; 	// ILLUMINANCE
-
-    return eval;
-}
-
-
-// Simple single scattering
-vector
-raymarch(vector p, v, ca, cs;
-	 float g;
-	 int samples, sid;
-	 string scope;
-	 int depth;
-	 float depthimp)
-{
-    float
-	pdf = .0,
-	sc = (float)samples,
-	maxdist = .0,
-	raylength, bias;
-
-    vector
-	mu = cs + ca,
-	eval = .0,
-	pp, cl, l;
-
-    float sigma = max(mu);
-    vector _cs = cs / ALONE_VEC(cs);
-
-    renderstate("renderer:raybias", bias);
-
-    if (trace(p, v, Time,
-	      "scope", scope,
-	      "ray:length", raylength))
-	maxdist = raylength;
-
-    if (maxdist > bias * samples)
-	{
-	    START_SAMPLING("nextpixel");
-
-	    if (maxdist > 1./sc)
-		sx *= maxdist;
-
-	    float weight = exp(-sigma * sx);
-
-	    pdf += weight;
-
-	    pp = p + v * sx;
-
-	    cl = _cs * illum_volume(pp, v, g, sid,
-				    depth, depthimp)
-		* exp(-mu * sx);
-
-	    eval += cl * weight;
-
-	    END_LOOP;
-	}
-
-    if (pdf > .0)
-    	eval /= pdf;
-
-    return eval;
-}
-
-
 // Invert hue of given RGB
 vector
 invert_hue(vector color)
@@ -1164,6 +1070,7 @@ physurface(int conductor;
     bsdf f_SPC = specular(rdir);
     bsdf f_TRN = specular(tdir);
     bsdf f_SSS = diffuse(nbN);
+    bsdf f_VOL = g == .0 ? isotropic() : henyeygreenstein(g);
 
 
     // When specular is allowed
@@ -1371,27 +1278,42 @@ physurface(int conductor;
 		    vector abstmp = 1.;
 		    vector tmpsss = .0;
 
-		    if (!oAbsGloss)
-			if (accurateabs && !smooth)
-			    abstmp = absorption(p, absdir,
-						_absty,
-						maxdist, angle,
-						_tsamples,
-						scopeTRN);
-			else
-			    abstmp = absorption(p, absdir,
-						_absty,
-						maxdist,
-						scopeTRN);
+		    if (!oAbs)
+			{
+			    if (accurateabs && !smooth)
+				abstmp = absorption(p, absdir,
+						    _absty,
+						    maxdist, angle,
+						    _tsamples,
+						    scopeTRN);
+			    else
+				abstmp = absorption(p, absdir,
+						    _absty,
+						    maxdist,
+						    scopeTRN);
 
 
-		    if (allowsinglesss)
-			tmpsss = raymarch(p, absdir,
-					  _absty, clrSSS,
-					  g,
-					  _vsamples, sid,
-					  scopeTRN,
-					  depth, depthimp);
+			    if (allowsinglesss)
+				{
+				    float raylength = .0;
+
+				    if (trace(p, absdir, Time,
+					      "samplefilter", "closest",
+					      "raystyle", "refract",
+					      "scope", scopeTRN,
+					      "maxdist", maxdist,
+					      "ray:length", raylength))
+					{
+					    vector clr = clrSSS / ALONE_VEC(clrSSS);
+					    tmpsss = raymarch(p, absdir, _absty,
+							      raylength,
+							      f_VOL,
+							      sid, _vsamples,
+							      depth, depthimp)
+						* clr;
+					}
+				}
+			}
 
 		    if (enter || internal)
 			{
