@@ -37,7 +37,7 @@
 #define START_SAMPLING(MODE)					\
     float sx, sy;						\
     for (int _i = 0; _i < samples; ++_i) {			\
-    nextsample(sid, sx, sy, "mode", MODE);
+    nextsample(sid, sx, sy, "mode", MODE)
 
 
 // Illuminance loop

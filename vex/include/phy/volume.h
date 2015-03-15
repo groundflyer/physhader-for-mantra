@@ -72,51 +72,82 @@ illum_volume(vector p, v;
 }
 
 
-// Single scattering with constant density ca
-vector
-raymarch(vector p, v, ca;
-	 float raylength;
-	 bsdf f;
-	 int sid, samples;
-	 int depth;
-	 float depthimp)
+// Constant density stachaostic raymarching routine
+struct RayMarcher
 {
-    float
-	pdf = .0,
-	sc = (float)samples;
+    vector _ca;
+    bsdf _f;
+    int _sid;
+    int _samples;
+    int _depth;
+    float _depthimp;
 
+    float _sigma;
+    float _sc;
+
+    void
+    init(vector ca;
+	 bsdf f;
+	 int sid, samples, depth;
+	 float depthimp)
+    {
+	this._ca = ca;
+	this._f = f;
+	this._sid = sid;
+	this._samples = samples;
+	this._depth = depth;
+	this._depthimp = depthimp;
+
+	this._sigma = luminance(ca);
+	this._sc = 1. / (float)samples;
+    }
+
+    // Without all "this"'s Mantra get segfault
     vector
-	eval = .0,
-	pp, cl, l;
+    eval(vector p, v;
+	 float raylength)
+    {
+	vector ca = this._ca;
+	bsdf f = this._f;
+	int sid = this._sid;
+	int samples = this._samples;
+	int depth = this._depth;
+	float depthimp = this._depthimp;
+	float sigma = this._sigma;
+	float sc = this._sc;
 
-    float sigma = luminance(ca);
+	float pdf = .0;
 
-    START_SAMPLING("nextpixel");
+	vector
+	    result = .0,
+	    pp, cl, l;
 
-    if (raylength > 1./sc)
-	sx *= raylength;
+	START_SAMPLING("nextpixel");
 
-    float weight = exp(-sigma * sx);
+	if (raylength > sc)
+	    sx *= raylength;
 
-    pdf += weight;
+	pp = p + v * sx;
 
-    pp = p + v * sx;
+	cl = illum_volume(pp, v, f, sid,
+			  depth, depthimp)
+	    * exp(-ca * sx);
 
-    cl = illum_volume(pp, v, f, sid,
-		      depth, depthimp)
-	* exp(-ca * sx);
+	float weight = exp(-sigma * sx);
+	pdf += weight;
+	result += cl * weight;
 
-    eval += cl * weight;
+	END_LOOP;
 
-    END_LOOP;
+	if (pdf > .0)
+	    result /= pdf;
 
-    if (pdf > .0)
-    	eval /= pdf;
-
-    return eval;
-}
+	return result;
+    }
+};
 
 
+// Volume model
 void
 phyvolume(vector p;
 	  vector i;
@@ -133,10 +164,7 @@ phyvolume(vector p;
     beauty = 0;
     opacity = 0;
 
-    if (g == .0)
-	f = isotropic();
-    else
-	f = henyeygreenstein(g);
+    f = g == .0 ? isotropic() : henyeygreenstein(g);
 
     vector v = -i;
     int depth = getraylevel() + getglobalraylevel();

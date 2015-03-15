@@ -164,9 +164,6 @@ cfresnel(vector v, normal;
 }
 
 
-
-
-
 // Trace reflection/refraction
 // Style choices:
 //	1 - Gather
@@ -194,8 +191,8 @@ cfresnel(vector v, normal;
     int mask = PBR_REFRACT_MASK;			\
     if (raystyle == "reflect") mask = PBR_REFLECT_MASK; \
     string sfilter = oblend ? "opacity" : "closest";	\
-    int doabs = max(absty) > .0;			\
-			   float raylength = .0;
+    int doabs = (max(absty) > .0);			\
+    float raylength = .0;
 
 // Delta function case
 vector
@@ -1103,6 +1100,10 @@ physurface(int conductor;
 	enableSSS	&&
 	thin;
 
+    // Single scattering
+    RayMarcher singlesss;
+    singlesss->init(_absty, f_VOL, sid, _vsamples, depth, depthimp);
+
     // disable separate absorption and single scattering
     // for Raytrace/Micropoly renderers
     int doAbsTRN = enter || internal;
@@ -1291,27 +1292,23 @@ physurface(int conductor;
 						    _absty,
 						    maxdist,
 						    scopeTRN);
+			}
 
+		    if (allowsinglesss)
+			{
+			    float raylength = .0;
 
-			    if (allowsinglesss)
+			    if (trace(p, absdir, Time,
+				      "samplefilter", "closest",
+				      "raystyle", "refract",
+				      "scope", scopeTRN,
+				      "maxdist", maxdist,
+				      "ray:length", raylength))
 				{
-				    float raylength = .0;
-
-				    if (trace(p, absdir, Time,
-					      "samplefilter", "closest",
-					      "raystyle", "refract",
-					      "scope", scopeTRN,
-					      "maxdist", maxdist,
-					      "ray:length", raylength))
-					{
-					    vector clr = clrSSS / ALONE_VEC(clrSSS);
-					    tmpsss = raymarch(p, absdir, _absty,
-							      raylength,
-							      f_VOL,
-							      sid, _vsamples,
-							      depth, depthimp)
-						* clr;
-					}
+				    vector clr = clrSSS / ALONE_VEC(clrSSS);
+				    tmpsss = singlesss->eval(p, absdir,
+							     raylength)
+					* clr;
 				}
 			}
 
