@@ -365,11 +365,15 @@ raytrace(bsdf f;
 		    {
 			if(TRACE_ABSRP)
 			    {
-				tmp = hitCf * exp(-raylength * absty);
+				tmp = max(hitCf) * exp(-raylength * absty);
 
 				if (dosss)
-				    tmp += sss * singlesss->eval(p, dir,
-								 raylength);
+				    {
+					vector st = singlesss->eval(p, dir,
+								    raylength);
+					st = max(st, .0);
+					tmp += sss * st;
+				    }
 			    }
 		    }
 		else

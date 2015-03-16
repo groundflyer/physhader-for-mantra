@@ -68,6 +68,8 @@
 
 #define END_LOOP	}
 
+#define FIT01(X) fit(X, min(X), max(X), .0, 1.)
+
 
 // Wrapper for sample_light and shadow_light
 int

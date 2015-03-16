@@ -85,7 +85,7 @@ vector
 xyz2rgb(vector xyz)
 {
     vector eval = xyz * CIE_REC_709;
-    return fit(eval, min(eval), max(eval), .0, 1.);
+    return FIT01(eval);
 }
 
 

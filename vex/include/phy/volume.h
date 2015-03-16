@@ -83,7 +83,6 @@ struct RayMarcher
     float _depthimp;
 
     float _sigma;
-    float _sc;
 
     void
     init(vector ca;
@@ -99,7 +98,6 @@ struct RayMarcher
 	this._depthimp = depthimp;
 
 	this._sigma = luminance(ca);
-	this._sc = 1. / (float)samples;
     }
 
     // Without all "this"'s Mantra get segfault
@@ -114,18 +112,14 @@ struct RayMarcher
 	int depth = this._depth;
 	float depthimp = this._depthimp;
 	float sigma = this._sigma;
-	float sc = this._sc;
-
 	float pdf = .0;
 
 	vector
 	    result = .0,
 	    pp, cl, l;
 
-	START_SAMPLING("nextpixel");
-
-	if (raylength > sc)
-	    sx *= raylength;
+	START_SAMPLING("nexpixel");
+	sx *= raylength;
 
 	pp = p + v * sx;
 
@@ -136,7 +130,7 @@ struct RayMarcher
 	float weight = exp(-sigma * sx);
 	pdf += weight;
 	result += cl * weight;
-
+	
 	END_LOOP;
 
 	if (pdf > .0)
