@@ -183,8 +183,9 @@ cfresnel(vector v, normal;
 
 #define TRACE_ABSRP trace(p, dir, Time,			\
 			  TRACE_FLAGS(1),		\
+			  "ray:length", raylength,	\
 			  variable, hitCf,		\
-			  "ray:length", raylength)
+			  "variancevar", hitCf)
 
 #define INIT_TRACE vector hitCf = .0;			\
     vector eval = .0;					\
@@ -363,17 +364,26 @@ raytrace(bsdf f;
 
 		if (doabs)
 		    {
-			if(TRACE_ABSRP)
+			if(trace(p, dir, Time,
+				 "scope", scope,
+				 "samplefilter", "closest",
+				 "maxdist", maxdist,
+				 "raystyle", raystyle,
+				 "ray:length", raylength,
+				 "samplefilter", "minimum",
+				 variable, hitCf,
+				 "variancevar", hitCf))
 			    {
-				tmp = max(hitCf) * exp(-raylength * absty);
+				vector scattering = .0;
+				vector absrp = exp(-raylength * absty);
 
 				if (dosss)
-				    {
-					vector st = singlesss->eval(p, dir,
-								    raylength);
-					st = max(st, .0);
-					tmp += sss * st;
-				    }
+				    scattering = sss * singlesss->eval(p, dir,
+								       raylength);
+
+				// minimum samplefilter saves from large
+				// incorrect values of hitCf
+				tmp = max(hitCf, .0) * absrp + scattering;
 			    }
 		    }
 		else
