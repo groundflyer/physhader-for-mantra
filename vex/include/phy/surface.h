@@ -416,21 +416,32 @@ raytrace(bsdf f;
 #define INIT_ABSRP float raylength = 1.;	\
     string sfilter = "closest";			\
     string raystyle = "refract";		\
-    vector eval = .0
+    vector eval = .0;				\
+    int dosss = (max(ksss) > .0);		\
+    sss = .0
 
 // volume absorption
 // Delta case
 vector
 absorption(vector p, dir, kabs;
 	   float maxdist;
-	   string scope)
+	   string scope;
+	   vector ksss;
+	   RayMarcher singlesss;
+	   export vector sss)
 {
     INIT_ABSRP;
 
     if(trace(p, dir, Time,
 	     TRACE_FLAGS(1),
 	     "ray:length", raylength))
-	eval = exp(-raylength * kabs);
+	{
+	    eval = exp(-raylength * kabs);
+
+	    if (dosss)
+		sss = ksss * singlesss->eval(p, dir,
+					     raylength);
+	}
 
     return eval;
 }
@@ -440,7 +451,10 @@ vector
 absorption(vector p, dir, kabs;
 	   float maxdist, angle;
 	   int samples;
-	   string scope)
+	   string scope;
+	   vector ksss;
+	   RayMarcher singlesss;
+	   export vector sss)
 {
     INIT_ABSRP;
 
@@ -450,8 +464,13 @@ absorption(vector p, dir, kabs;
 	   "ray:length", raylength)
 	{
 	    eval += exp(-raylength * kabs);
+
+	    if (dosss)
+		sss = ksss * singlesss->eval(p, dir,
+					     raylength);
 	}
 
+    sss /= samples;
     return eval / samples;
 }
 
@@ -1134,12 +1153,10 @@ physurface(int conductor;
     // for Raytrace/Micropoly renderers
     int inside = enter || internal;
 
+    int isRTMP = (renderengine == "micropoly" ||
+		  renderengine == "raytrace");
 
-
-    int oAbs =
-	doAbs &&
-	(renderengine == "micropoly" ||
-	 renderengine == "raytrace");
+    int oAbs = doAbs && isRTMP;
 
     // refraction or internal
     int oAbsTRN = oAbs && inside;
@@ -1255,7 +1272,7 @@ physurface(int conductor;
 	}
 
     // Ray-tracing specular
-    if (allowSPC && styleSPC)
+    if (allowSPC && styleSPC && isRTMP)
 	{
 	    OPTABS(oAbsSPC);
 
@@ -1288,7 +1305,7 @@ physurface(int conductor;
     // Refraction
     if (allowTRN && styleTRN)
 	{
-	    int do_trace = 1;
+	    int do_trace = styleTRN && isRTMP;
 
 	    if (thin)
 		if (thick)
@@ -1310,51 +1327,40 @@ physurface(int conductor;
 	    else if (doAbs && !oAbs)
 		{
 		    // Absorption and single scattering for PBR
-
 		    vector abstmp = 1.;
 		    vector tmpsss = .0;
 
-		    if (!smooth)
-			abstmp = absorption(p, absdir,
-					    _absty,
-					    maxdist,
-					    scopeTRN);
+		    if (inside)
+			absdir = tdir;
+		    else if (enableSPC)
+			absdir = rdir;
+
+		    vector tmpksss = allowsinglesss ? _clrSSS : .0;
+
+		    if (smooth)
+		    	abstmp = absorption(p, absdir,
+		    			    _absty,
+		    			    maxdist,
+		    			    scopeTRN,
+		    			    tmpksss,
+		    			    singlesss,
+		    			    tmpsss);
 		    else
-			abstmp = absorption(p, absdir,
-					    _absty,
-					    maxdist, angle,
-					    _tsamples,
-					    scopeTRN);
+		    	abstmp = absorption(p, absdir,
+		    			    _absty,
+		    			    maxdist, angle,
+		    			    _tsamples,
+		    			    scopeTRN,
+		    			    tmpksss,
+		    			    singlesss,
+		    			    tmpsss);
 
-
-		    if (allowsinglesss)
-			{
-			    float raylength = .0;
-
-			    if (trace(p, absdir, Time,
-				      "samplefilter", "closest",
-				      "raystyle", "refract",
-				      "scope", scopeTRN,
-				      "maxdist", maxdist,
-				      "ray:length", raylength))
-				{
-				    vector clr = clrSSS / ALONE_VEC(clrSSS);
-				    tmpsss = singlesss->eval(p, absdir,
-							     raylength)
-					* clr;
-				}
-			}
+		    singlescattering = tmpsss;
 
 		    if (inside)
-			{
-			    absTRN = abstmp;
-			    singlescattering = tmpsss;
-			}
+			absTRN = abstmp;
 		    else if(enableSPC)
-			{
-			    absSPC = abstmp;
-			    singlescattering = tmpsss;
-			}
+			absSPC = abstmp;
 		}
 
 	    if (do_trace)
