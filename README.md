@@ -1,4 +1,4 @@
-[![PhyShader Intro](img/happy.jpg "PhyShader Intro")](http://vimeo.com/116465165)
+[![PhyShader Intro](../../wiki/img/happy.jpg "PhyShader Intro")](http://vimeo.com/116465165)
 
 # PhyShader
 Physical plausible, easy to use, compact surface shader for Mantra renderer.
@@ -31,4 +31,4 @@ Copy `vex`,`otls` and `gallery` folders into your Houdini home directory.
 6. RENDER
 
 ## Advanced usage
-[Wiki](../../wiki/Home) (In progress)
+[Wiki](../../wiki/Home)
