@@ -25,7 +25,7 @@ Copy `vex`,`otls` and `gallery` folders into your Houdini home directory.
 ## Quickstart
 1. Go to Material Palette
 2. Choose PhySurface Simple and move material into the scene
-3. Assign material to the object
+3. Assign material to object
 4. Adjust parameters
 5. ...
 6. RENDER
