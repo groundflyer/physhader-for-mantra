@@ -1111,7 +1111,11 @@ physurface(int conductor;
     bsdf f_DFS = diffuse(nfN, roughDFS);
     bsdf f_SPC = specular(rdir);
     bsdf f_TRN = specular(tdir);
-    bsdf f_SSS = diffuse(nbN);
+    bsdf f_SSS = cvex_bsdf("diffuse_eval",
+			   "diffuse_sample",
+			   "label", "diffuse",
+			   "N", nbN,
+			   "Ng", Ng);
     bsdf f_VOL = g == .0 ? isotropic() : henyeygreenstein(g);
 
 
