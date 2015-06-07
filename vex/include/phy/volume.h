@@ -53,16 +53,12 @@ illum_volume(vector p, v;
 
     SAMPLE_LIGHT(p, v);
 
-    if (mask & PBR_VOLUME_MASK)
-	{
-	    cl *= EVAL_BSDF(f);
-
-	    accum += cl;
-	}
+    cl *= EVAL_BSDF(f, PBR_VOLUME_MASK);
+    accum += cl;
 
     END_LOOP; 	// SAMPLING
 
-    illum = accum / samples;
+    illum += accum / samples;
 
     eval += illum;
 

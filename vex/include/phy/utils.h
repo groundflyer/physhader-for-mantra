@@ -62,7 +62,7 @@
 	l = normalize(l); }
 
 // Eval bsdf with current sample
-#define EVAL_BSDF(x)	eval_bsdf(x, v, l, mask)
+#define EVAL_BSDF(F, MASK)	eval_bsdf(F, v, l, MASK)
 
 #define SET_SAMPLE	vector sample = set(sx, sy, .0);
 
@@ -81,7 +81,7 @@ sample_light(int lid, sid;
     float scale;
 
     int mask = sample_light(lid, p, sample,
-			    Time, lp, eval, scale);
+			    Time, lp, eval, scale, "N", n);
 
     cl = eval * scale / ALONE_VEC(eval);
     l = lp - p;

@@ -77,32 +77,28 @@ illum_surface(vector p, pTRN, pSSS;
     SAMPLE_LIGHT(p, nfN);
 
     // Diffuse reflection
-    if (enableDFS && (mask & PBR_DIFFUSE_MASK))
-	_tmpDFS += cl * EVAL_BSDF(f_DFS);
+    if (enableDFS)
+	_tmpDFS += cl * EVAL_BSDF(f_DFS, PBR_DIFFUSE_MASK);
 
     // Specular reflection
-    if (enableSPC && (mask & PBR_REFLECT_MASK))
-	_tmpSPC += cl * EVAL_BSDF(f_SPC);
+    if (enableSPC)
+	_tmpSPC += cl * EVAL_BSDF(f_SPC, PBR_REFLECT_MASK);
 
     // Refraction
     if (enableTRN)
 	{
-	    if (thick)
-		SAMPLE_LIGHT(pTRN, nbN);
+	    SAMPLE_LIGHT(pTRN, nbN);
 
-	    if (mask & PBR_REFRACT_MASK)
-		_tmpTRN += cl * EVAL_BSDF(f_TRN);
+	    _tmpTRN += cl * EVAL_BSDF(f_TRN, PBR_REFRACT_MASK);
 	}
 
     // SSS of thin objects
     if (enableSSS)
-	{
-	    if (thick)
-		SAMPLE_LIGHT(pSSS, nbN);
+    	{
+    	    SAMPLE_LIGHT(pSSS, nbN);
 
-	    if (mask & PBR_DIFFUSE_MASK)
-		_tmpSSS += cl * EVAL_BSDF(f_SSS);
-	}
+	    _tmpSSS += cl * EVAL_BSDF(f_SSS, PBR_DIFFUSE_MASK);
+    	}
 
     END_LOOP;			// SAMPLING
 
@@ -1108,14 +1104,18 @@ physurface(int conductor;
     string scopeSPC = "scope:default";
     string scopeTRN = "scope:default";
 
-    bsdf f_DFS = diffuse(nfN, roughDFS);
+    bsdf f_DFS = cvex_bsdf("phy_diffuse_eval",
+    			   "phy_diffuse_sample",
+    			   "label", "diffuse",
+    			   "n", nfN,
+    			   "sigma", roughDFS,
+    			   "eta", enableSPC ? eta : 1.);
     bsdf f_SPC = specular(rdir);
     bsdf f_TRN = specular(tdir);
-    bsdf f_SSS = cvex_bsdf("diffuse_eval",
-			   "diffuse_sample",
+    bsdf f_SSS = cvex_bsdf("phy_diffuse_eval",
+			   "phy_diffuse_sample",
 			   "label", "diffuse",
-			   "N", nbN,
-			   "Ng", Ng);
+			   "n", nbN);
     bsdf f_VOL = g == .0 ? isotropic() : henyeygreenstein(g);
 
 
@@ -1205,13 +1205,6 @@ physurface(int conductor;
 	    fresnel(ni, nfN, eta, fr, ft);
 	}
 
-    // Diffuse
-    if (enableSPC)
-	f_DFS = cvex_bsdf("fresneldiffuse_eval",
-			  "fresneldiffuse_sample",
-			  "label", "diffuse",
-			  "N", nfN,
-			  "eta", eta);
 
     // BSDFs of reflections and refractions
     if(smooth)
@@ -1414,7 +1407,7 @@ physurface(int conductor;
 
     // Lighting
     illum_surface(p, pTRN, p + nbN * thickness,
-    		  nbN, nfN,
+    		  nfN, nbN,
     		  v,
     		  thick,
     		  thickness,
