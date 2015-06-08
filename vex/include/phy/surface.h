@@ -974,9 +974,6 @@ physurface(int conductor;
     // if specular rougness is below this value
     int smooth = roughSPC <= SMOOTH_THRESHOLD;
 
-    // When reflections/refraction are anisotropic
-    int isanisotropic = (anisobias != .0) && !smooth;
-
     // Anisotropy roughness
     float
 	sigmaU = sigma,
@@ -1216,56 +1213,31 @@ physurface(int conductor;
 	{
 	    angle = atan(sigma);
 
-	    if(isanisotropic)
-		{
-		    anisorough(sigma, anisobias, sigmaU, sigmaV);
+	    anisorough(sigma, anisobias, sigmaU, sigmaV);
 
-		    float beta = anisorough(v, tU, tV, sigmaU, sigmaV);
+	    float beta = anisorough(v, tU, tV, sigmaU, sigmaV);
 
-		    gafmask = gaf(dot(v, nfN), beta);
-		    gafrefr = gaf(dot(tdir, nbN), beta);
+	    gafmask = gaf(dot(v, nfN), beta);
+	    gafrefr = gaf(dot(tdir, nbN), beta);
 
-		    f_SPC = cvex_bsdf("phy_aniso_eval",
-				      "phy_aniso_sample",
-				      "label", "reflect",
-				      "n", nfN,
-				      "sigmau", sigmaU,
-				      "sigmav", sigmaV,
-				      "tu", tU,
-				      "tv", tV);
+	    f_SPC = cvex_bsdf("phy_aniso_eval",
+			      "phy_aniso_sample",
+			      "label", "reflect",
+			      "n", nfN,
+			      "sigmau", sigmaU,
+			      "sigmav", sigmaV,
+			      "tu", tU,
+			      "tv", tV);
 
-		    f_TRN = cvex_bsdf("phy_aniso_trans_eval",
-				      "phy_aniso_trans_sample",
-				      "label", "refract",
-				      "n", n,
-				      "sigmau", sigmaU,
-				      "sigmav", sigmaV,
-				      "tu", tU,
-				      "tv", tV,
-				      "eta", thin ? 1. : eta);
-		}
-	    else
-		{
-		    gafmask = gaf(dot(v, nfN), sigma);
-		    gafrefr = gaf(dot(tdir, nbN), sigma);
-
-		    f_SPC = cvex_bsdf("phy_eval",
-		    		      "phy_sample",
-		    		      "label", "reflect",
-		    		      "n", nfN,
-		    		      "sigma", sigma,
-				      "tu", tU,
-				      "tv", tV);
-
-		    f_TRN = cvex_bsdf("phy_trans_eval",
-				      "phy_trans_sample",
-				      "label", "refract",
-				      "n", n,
-				      "sigma", sigma,
-				      "tu", tU,
-				      "tv", tV,
-				      "eta", thin ? 1. : eta);
-		}
+	    f_TRN = cvex_bsdf("phy_aniso_trans_eval",
+			      "phy_aniso_trans_sample",
+			      "label", "refract",
+			      "n", n,
+			      "sigmau", sigmaU,
+			      "sigmav", sigmaV,
+			      "tu", tU,
+			      "tv", tV,
+			      "eta", thin ? 1. : eta);
 	}
 
     // Ray-tracing specular

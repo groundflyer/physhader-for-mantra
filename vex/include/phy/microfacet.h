@@ -38,7 +38,7 @@
 
 // Next definitions are used in cvex shaders
 
-#define GGG_REFL refl = 1. - ggg_albedo(sigma);
+#define GGG_REFL refl = 1
 
 #define EVAL_GGG				\
     pdf = ct_ggg(sigma, dotNH, dotNV);		\
@@ -97,17 +97,6 @@ ggg(float dotNH, sigma)
 {
     float D = sigma / (sigma + 1.0/(dotNH*dotNH) - 1.0);
     return D*D;
-}
-
-
-// Albedo of GGG
-float
-ggg_albedo(float sigma)
-{
-    float
-	sm = sqrt(sigma),
-	tmp = (sm + 1.0);
-    return (2.0 * sigma + sm) / (tmp * tmp); // * 0.5 * PI_2;
 }
 
 
