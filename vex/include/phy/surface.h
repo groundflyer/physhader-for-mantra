@@ -336,9 +336,11 @@ raytrace(bsdf f;
 {
     INIT_TRACE;
 
-    int type;
-    vector dir, brdf, tmp;
-    float pdf;
+    int type = 0;
+    vector dir = 0;
+    vector brdf = 0;
+    vector tmp = 0;
+    float pdf = 0;
     float summ = .0;
     float prevlum = .0;
     float var = .0;
