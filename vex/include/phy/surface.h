@@ -368,7 +368,6 @@ raytrace(bsdf f;
 				 "maxdist", maxdist,
 				 "raystyle", raystyle,
 				 "ray:length", raylength,
-				 "samplefilter", "minimum",
 				 variable, hitCf,
 				 "variancevar", hitCf))
 			    {
@@ -379,8 +378,6 @@ raytrace(bsdf f;
 				    scattering = sss * singlesss->eval(p, dir,
 								       raylength);
 
-				// minimum samplefilter saves from large
-				// incorrect values of hitCf
 				tmp = max(hitCf, .0) * absrp + scattering;
 			    }
 		    }
