@@ -884,10 +884,11 @@ invert_hue(vector color)
 void
 physurface(int conductor;
 	   int thin;
-	   float thickness;	// Thickness of thin wall if thin
+	   float thickness;	// Thickness of thin sheet if thin
 	   float alb;		// Albedo
 	   vector clrsurf;	// Surface color
-	   vector ior;		// Tuple of refraction indicies
+	   vector2 iort;	// Pair of refraction indicies of transmission medium
+	   float iori;		// refraction index of incident medium
 	   int enableDFS, enableSPC, enableTRN, enableSSS;
 	   float weightDFS, weightSPC, weightTRN, weightSSS;
 	   float roughDFS, roughSPC;
@@ -943,7 +944,7 @@ physurface(int conductor;
 	ft = 1.;
 
     // IOR
-    float etat = max(1.0000016, ior.x);
+    float etat = max(1.0000016, iort.x);
 
     // Dispersion
     vector dtint = 1.;
@@ -955,8 +956,8 @@ physurface(int conductor;
 	}
 
     float
-	etai = ior.y,
-	etak = ior.z,
+	etai = iori,
+	etak = iort.y,
 	eta = etai/etat;
 
     // Geometry atenuation factor
