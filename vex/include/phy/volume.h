@@ -33,17 +33,17 @@
 #include <phy/utils.h>
 
 
-// Direct lighting for volume
-vector
+// direct lighting for volume
+void
 illum_volume(vector p, v;
 	     bsdf f;
+	     vector scattering;
+	     vector opacity;
 	     int sid;
 	     int depth;
-	     float depthimp)
+	     float depthimp;
+	     export vector beauty)
 {
-    vector eval = .0;
-    vector illum = .0;
-
     START_ILLUMINANCE;
 
     vector accum = .0;
@@ -58,13 +58,14 @@ illum_volume(vector p, v;
 
     END_LOOP; 	// SAMPLING
 
-    illum += accum / samples;
+    vector eval = accum * opacity * scattering / samples;
 
-    eval += illum;
+    if (!depth)
+	storelightexport(getlightname(lid), "volume_direct", eval);
+
+    beauty += eval;
 
     END_LOOP; 	// ILLUMINANCE
-
-    return eval;
 }
 
 
@@ -119,9 +120,7 @@ struct RayMarcher
 
 	pp = p + v * sx;
 
-	cl = illum_volume(pp, v, f, sid,
-			  depth, depthimp)
-	    * exp(-ca * sx);
+	illum_volume(pp, v, f, 1, exp(-ca * sx), sid, depth, depthimp, cl);
 
 	float weight = exp(-sigma * sx);
 	pdf += weight;
@@ -142,14 +141,15 @@ void
 phyvolume(vector p;
 	  vector i;
 	  float density;
-	  vector color;
+	  vector scattering;
 	  float g;
 	  int constantshadow;
 	  float shadowdensity;
 	  float depthimp;
 	  export vector beauty;
-	  export float opacity;
-	  export bsdf f)
+	  export vector opacity;
+	  export bsdf f;
+	  export vector direct)
 {
     beauty = 0;
     opacity = 0;
@@ -169,9 +169,9 @@ phyvolume(vector p;
     else
 	opacity = 1. - exp(-density * dPdz);
 
-    beauty = illum_volume(p, v, f, sid, depth, depthimp);
+    illum_volume(p, v, f, scattering, opacity, sid, depth, depthimp, beauty);
 
-    beauty *= opacity * color;
+    direct = beauty;
 }
 
 
