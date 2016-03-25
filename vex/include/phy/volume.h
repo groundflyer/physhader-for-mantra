@@ -33,7 +33,39 @@
 #include <phy/utils.h>
 
 
-// direct lighting for volume
+// volume direct lighting without exports
+vector
+illum_volume(vector p, v;
+	     bsdf f;
+	     int sid;
+	     int depth;
+	     float depthimp)
+{
+    vector eval = .0;
+
+    START_ILLUMINANCE;
+
+    vector accum = .0;
+
+    START_SAMPLING("nextpixel");
+    SET_SAMPLE;
+
+    SAMPLE_LIGHT(p, v);
+
+    cl *= EVAL_BSDF(f, PBR_VOLUME_MASK);
+    accum += cl;
+
+    END_LOOP; 	// SAMPLING
+
+    eval += accum / samples;
+
+    END_LOOP; 	// ILLUMINANCE
+
+    return eval;
+}
+
+
+// direct lighting for volume with exports
 void
 illum_volume(vector p, v;
 	     bsdf f;
@@ -120,7 +152,9 @@ struct RayMarcher
 
 	pp = p + v * sx;
 
-	illum_volume(pp, v, f, 1, exp(-ca * sx), sid, depth, depthimp, cl);
+	cl = illum_volume(pp, v, f, sid,
+			  depth, depthimp)
+	    * exp(-ca * sx);
 
 	float weight = exp(-sigma * sx);
 	pdf += weight;
