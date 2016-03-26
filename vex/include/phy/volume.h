@@ -73,7 +73,7 @@ illum_volume(vector p, v;
 void
 illum_volume(vector p, v;
 	     bsdf f;
-	     vector scattering;
+	     vector diffuseclr;
 	     vector opacity;
 	     int sid;
 	     int depth;
@@ -98,7 +98,7 @@ illum_volume(vector p, v;
 
     END_LOOP; 	// SAMPLING
 
-    vector eval = accum * opacity * scattering / pdf;
+    vector eval = accum * opacity * diffuseclr / pdf;
 
     if (!depth)
 	storelightexport(getlightname(lid), "volume_direct", eval);
@@ -183,7 +183,9 @@ void
 phyvolume(vector p;
 	  vector i;
 	  float density;
+	  vector diffuse_color;
 	  vector scattering;
+	  vector absorption;
 	  float g;
 	  int constantshadow;
 	  float shadowdensity;
@@ -214,9 +216,9 @@ phyvolume(vector p;
 		opacity = 1. - exp(-density * dPdz * scattering);
 	}
     else
-	opacity = 1. - exp(-density * dPdz);
+	opacity = 1. - exp(-density * dPdz * absorption);
 
-    illum_volume(p, v, f, scattering, opacity, sid, depth, depthimp, beauty);
+    illum_volume(p, v, f, diffuse_color, opacity, sid, depth, depthimp, beauty);
 
     direct = beauty;
 }
