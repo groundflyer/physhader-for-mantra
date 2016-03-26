@@ -206,8 +206,13 @@ phyvolume(vector p;
 
     int sid = renderengine == "micropoly" ? newsampler() : SID;
 
-    if(isshadowray() && constantshadow)
-	opacity = shadowdensity;
+    if(isshadowray())
+	{
+	    if (constantshadow)
+		opacity = shadowdensity;
+	    else
+		opacity = 1. - exp(-density * dPdz * scattering);
+	}
     else
 	opacity = 1. - exp(-density * dPdz);
 
