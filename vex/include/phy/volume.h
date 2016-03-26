@@ -46,18 +46,22 @@ illum_volume(vector p, v;
     START_ILLUMINANCE;
 
     vector accum = .0;
+    float pdf = 0;
 
     START_SAMPLING("nextpixel");
     SET_SAMPLE;
 
     SAMPLE_LIGHT(p, v);
 
-    cl *= EVAL_BSDF(f, PBR_VOLUME_MASK);
-    accum += cl;
+    float weight = 0;
+    cl *= eval_bsdf(f, v, l, weight, PBR_VOLUME_MASK);
+
+    pdf += weight;
+    accum += cl * weight;
 
     END_LOOP; 	// SAMPLING
 
-    eval += accum / samples;
+    eval += accum / pdf;
 
     END_LOOP; 	// ILLUMINANCE
 
@@ -79,18 +83,22 @@ illum_volume(vector p, v;
     START_ILLUMINANCE;
 
     vector accum = .0;
-
+    float pdf = 0;
+    
     START_SAMPLING("nextpixel");
     SET_SAMPLE;
 
     SAMPLE_LIGHT(p, v);
 
-    cl *= EVAL_BSDF(f, PBR_VOLUME_MASK);
-    accum += cl;
+    float weight = 0;
+    cl *= eval_bsdf(f, v, l, weight, PBR_VOLUME_MASK);
+
+    pdf += weight;
+    accum += cl * weight;
 
     END_LOOP; 	// SAMPLING
 
-    vector eval = accum * opacity * scattering / samples;
+    vector eval = accum * opacity * scattering / pdf;
 
     if (!depth)
 	storelightexport(getlightname(lid), "volume_direct", eval);
@@ -190,7 +198,7 @@ phyvolume(vector p;
 
     f = g == .0 ? isotropic() : henyeygreenstein(g);
 
-    vector v = -i;
+    vector v = normalize(-i);
     int depth = getraylevel() + getglobalraylevel();
 
     string renderengine;

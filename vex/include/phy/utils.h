@@ -56,10 +56,10 @@
 
 // Sample light with given position and normal
 #define SAMPLE_LIGHT(PP, NN)			\
-    { mask = sample_light(lid, sid,		\
+    mask = sample_light(lid, sid,		\
 			  PP, NN, sample,	\
 			  cl, l);		\
-	l = normalize(l); }
+    l = normalize(l);
 
 // Eval bsdf with current sample
 #define EVAL_BSDF(F, MASK)	eval_bsdf(F, v, l, MASK)
