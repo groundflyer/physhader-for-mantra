@@ -70,6 +70,10 @@ illum_surface(vector p, pTRN, pSSS;
     vector _tmpSPC = .0;
     vector _tmpTRN = .0;
     vector _tmpSSS = .0;
+    float pdfDFS = 0;
+    float pdfSPC = 0;
+    float pdfTRN = 0;
+    float pdfSSS = 0;
 
     START_SAMPLING("nextpixel");
     SET_SAMPLE;
@@ -78,18 +82,30 @@ illum_surface(vector p, pTRN, pSSS;
 
     // Diffuse reflection
     if (enableDFS)
-	_tmpDFS += cl * EVAL_BSDF(f_DFS, PBR_DIFFUSE_MASK);
+	{
+	    float weight = 0;
+	    vector eval = eval_bsdf(f_DFS, v, l, weight, PBR_DIFFUSE_MASK);
+	    _tmpDFS += cl * eval * weight;
+	    pdfDFS += weight;
+	}
 
     // Specular reflection
     if (enableSPC)
-	_tmpSPC += cl * EVAL_BSDF(f_SPC, PBR_REFLECT_MASK);
-
+	{
+	    float weight = 0;
+	    vector eval = eval_bsdf(f_SPC, v, l, weight, PBR_REFLECT_MASK);
+	    _tmpSPC += cl * eval * weight;
+	    pdfSPC += weight;
+	}
     // Refraction
     if (enableTRN)
 	{
 	    SAMPLE_LIGHT(pTRN, nbN);
 
-	    _tmpTRN += cl * EVAL_BSDF(f_TRN, PBR_REFRACT_MASK);
+	    float weight = 0;
+	    vector eval = eval_bsdf(f_TRN, v, l, weight, PBR_REFRACT_MASK);
+	    _tmpTRN += cl * eval * weight;
+	    pdfTRN += weight;
 	}
 
     // SSS of thin objects
@@ -97,15 +113,18 @@ illum_surface(vector p, pTRN, pSSS;
     	{
     	    SAMPLE_LIGHT(pSSS, nbN);
 
-	    _tmpSSS += cl * EVAL_BSDF(f_SSS, PBR_DIFFUSE_MASK);
+	    float weight = 0;
+	    vector eval = eval_bsdf(f_SSS, v, l, weight, PBR_DIFFUSE_MASK);
+	    _tmpSSS += cl * eval * weight;
+	    pdfSSS += weight;
     	}
 
     END_LOOP;			// SAMPLING
 
-    dfs = factorDFS * _tmpDFS / samples;
-    spc = factorSPC * _tmpSPC / samples;
-    trn = factorTRN * _tmpTRN / samples;
-    sss = factorSSS * _tmpSSS / samples;
+    dfs = factorDFS * _tmpDFS / pdfDFS;
+    spc = factorSPC * _tmpSPC / pdfSPC;
+    trn = factorTRN * _tmpTRN / pdfTRN;
+    sss = factorSSS * _tmpSSS / pdfSSS;
 
     if (!depth)
 	{
