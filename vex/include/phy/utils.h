@@ -61,9 +61,6 @@
 			  cl, l);		\
     l = normalize(l);
 
-// Eval bsdf with current sample
-#define EVAL_BSDF(F, MASK)	eval_bsdf(F, v, l, MASK)
-
 #define SET_SAMPLE	vector sample = set(sx, sy, .0);
 
 #define END_LOOP	}
