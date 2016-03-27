@@ -867,15 +867,6 @@ raySSS(vector p, n;
 }
 
 
-// Invert hue of given RGB
-vector
-invert_hue(vector color)
-{
-    vector hsv = rgbtohsv(color);
-    hsv.x = (hsv.x + 0.5) % 1;
-    return hsvtorgb(hsv);
-}
-
 // optimize X absorption
 #define OPTABS(X) if (X) { rtAbsty = _absty; rtSSS = allowsinglesss ?  _clrSSS : .0; }
 

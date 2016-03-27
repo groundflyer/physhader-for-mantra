@@ -105,4 +105,14 @@ inobject(vector p;
 }
 
 
+// Invert hue of given RGB
+vector
+invert_hue(vector color)
+{
+    vector hsv = rgbtohsv(color);
+    hsv.x = (hsv.x + 0.5) % 1;
+    return hsvtorgb(hsv);
+}
+
+
 #endif	//__phy_utils__

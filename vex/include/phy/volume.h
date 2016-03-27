@@ -197,6 +197,8 @@ phyvolume(vector p;
 {
     beauty = 0;
     opacity = 0;
+    vector _absorption = invert_hue(absorption);
+    vector _scattering = invert_hue(scattering);
 
     f = g == .0 ? isotropic() : henyeygreenstein(g);
 
@@ -213,10 +215,10 @@ phyvolume(vector p;
 	    if (constantshadow)
 		opacity = shadowdensity;
 	    else
-		opacity = 1. - exp(-density * dPdz * scattering);
+		opacity = 1. - exp(-density * dPdz * _scattering);
 	}
     else
-	opacity = 1. - exp(-density * dPdz * absorption);
+	opacity = 1. - exp(-density * dPdz * _absorption);
 
     illum_volume(p, v, f, diffuse_color, opacity, sid, depth, depthimp, beauty);
 
