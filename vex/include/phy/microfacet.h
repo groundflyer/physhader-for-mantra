@@ -57,7 +57,8 @@
     vector h = microfacet(sigmau, sigmav, sx, sy);	\
     h *= set(tu, tv, n);
 
-#define ANISO_SIGMA_EVAL float sigma =				\
+#define ANISO_SIGMA_EVAL float sigma =			\
+	sigmau == sigmav ? sigmau :			\
 	anisorough(h, n, tu, tv, dotNH, sigmau, sigmav);
    
 #define ANISO_SIGMA_PDF float sigma = avg(sigmau, sigmav);
