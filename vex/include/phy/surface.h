@@ -431,7 +431,6 @@ raytrace(bsdf f;
     string sfilter = "closest";			\
     string raystyle = "refract";		\
     vector eval = .0;				\
-    int dosss = (max(ksss) > .0);		\
     sss = .0
 
 // volume absorption
@@ -440,7 +439,7 @@ vector
 absorption(vector p, dir, kabs;
 	   float maxdist;
 	   string scope;
-	   vector ksss;
+	   int dosss;
 	   RayMarcher singlesss;
 	   export vector sss)
 {
@@ -453,8 +452,8 @@ absorption(vector p, dir, kabs;
 	    eval = exp(-raylength * kabs);
 
 	    if (dosss)
-		sss = ksss * singlesss->eval(p, dir,
-					     raylength);
+		sss = singlesss->eval(p, dir,
+				      raylength);
 	}
 
     return eval;
@@ -466,7 +465,7 @@ absorption(vector p, dir, kabs;
 	   float maxdist, angle;
 	   int samples;
 	   string scope;
-	   vector ksss;
+	   int dosss;
 	   RayMarcher singlesss;
 	   export vector sss)
 {
@@ -480,8 +479,8 @@ absorption(vector p, dir, kabs;
 	    eval += exp(-raylength * kabs);
 
 	    if (dosss)
-		sss = ksss * singlesss->eval(p, dir,
-					     raylength);
+		sss = singlesss->eval(p, dir,
+				      raylength);
 	}
 
     sss /= samples;
@@ -1024,6 +1023,7 @@ physurface(int conductor;
 
     // Normalized SSS color
     vector _clrSSS = clrSSS / ALONE_VEC(clrSSS);
+    vector _sca = invert_hue(clrSSS);
 
     // Exponent inverts color. Protect from this.
     vector _absty = invert_hue(absty);
@@ -1158,7 +1158,7 @@ physurface(int conductor;
 
     // Single scattering
     RayMarcher singlesss;
-    singlesss->init(_absty, f_VOL, sid, _vsamples, depth, depthimp);
+    singlesss->init(_sca, f_VOL, sid, _vsamples, depth, depthimp);
 
     // disable separate absorption and single scattering
     // for Raytrace/Micropoly renderers
@@ -1260,7 +1260,7 @@ physurface(int conductor;
 				    maxdist,
 				    oblendSPC, styleSPC,
 				    "reflect", scopeSPC, gvarSPC,
-				    rtAbsty, rtSSS,				
+				    rtAbsty, rtSSS,
 				    singlesss);
 	    else if (useF)
 		traceSPC = raytrace(f_SPC,
@@ -1314,14 +1314,12 @@ physurface(int conductor;
 		    else if (enableSPC)
 			absdir = rdir;
 
-		    vector tmpksss = allowsinglesss ? _clrSSS : .0;
-
 		    if (smooth)
 		    	abstmp = absorption(p, absdir,
 		    			    _absty,
 		    			    maxdist,
 		    			    scopeTRN,
-		    			    tmpksss,
+					    allowsinglesss,
 		    			    singlesss,
 		    			    tmpsss);
 		    else
@@ -1330,7 +1328,7 @@ physurface(int conductor;
 		    			    maxdist, angle,
 		    			    _tsamples,
 		    			    scopeTRN,
-		    			    tmpksss,
+					    allowsinglesss,
 		    			    singlesss,
 		    			    tmpsss);
 
