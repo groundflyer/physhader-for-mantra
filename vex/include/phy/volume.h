@@ -39,7 +39,8 @@ illum_volume(vector p, v;
 	     bsdf f;
 	     int sid;
 	     int depth;
-	     float depthimp)
+	     float depthimp;
+	     int shadow)
 {
     vector eval = .0;
 
@@ -78,6 +79,7 @@ illum_volume(vector p, v;
 	     int sid;
 	     int depth;
 	     float depthimp;
+	     int shadow;
 	     export vector beauty)
 {
     START_ILLUMINANCE;
@@ -118,6 +120,7 @@ struct RayMarcher
     int _samples;
     int _depth;
     float _depthimp;
+    int _shadow;
 
     float _sigma;
 
@@ -125,7 +128,8 @@ struct RayMarcher
     init(vector ca;
 	 bsdf f;
 	 int sid, samples, depth;
-	 float depthimp)
+	 float depthimp;
+	 int shadow)
     {
 	this._ca = ca;
 	this._f = f;
@@ -133,6 +137,7 @@ struct RayMarcher
 	this._samples = samples;
 	this._depth = depth;
 	this._depthimp = depthimp;
+	this._shadow = shadow;
 
 	this._sigma = luminance(ca);
     }
@@ -148,6 +153,7 @@ struct RayMarcher
 	int samples = this._samples;
 	int depth = this._depth;
 	float depthimp = this._depthimp;
+	int shadow = this._shadow;
 	float sigma = this._sigma;
 	float pdf = .0;
 
@@ -161,7 +167,7 @@ struct RayMarcher
 	pp = p + v * sx;
 
 	cl = illum_volume(pp, v, f, sid,
-			  depth, depthimp)
+			  depth, depthimp, shadow)
 	    * exp(-ca * sx);
 
 	float weight = exp(-sigma * sx);
@@ -187,6 +193,7 @@ phyvolume(vector p;
 	  vector scattering;
 	  vector absorption;
 	  float g;
+	  int shadow;
 	  int constantshadow;
 	  float shadowdensity;
 	  float depthimp;
@@ -220,7 +227,7 @@ phyvolume(vector p;
     else
 	opacity = 1. - exp(-density * dPdz * _absorption);
 
-    illum_volume(p, v, f, diffuse_color, opacity, sid, depth, depthimp, beauty);
+    illum_volume(p, v, f, diffuse_color, opacity, sid, depth, depthimp, shadow, beauty);
 
     direct = beauty;
 }

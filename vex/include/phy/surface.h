@@ -51,6 +51,7 @@ illum_surface(vector p, pTRN, pSSS;
 	      int thick;
 	      float thickness;
 	      float depthimp;
+	      int shadow;
 	      int sid;
 	      int depth;
 	      int enableDFS, enableSPC, enableTRN, enableSSS;
@@ -630,7 +631,8 @@ illum_surface(vector p, n;
 	      float eta;
 	      int sid;
 	      int depth;
-	      float depthimp)
+	      float depthimp;
+	      int shadow)
 {
     vector eval = .0;
 
@@ -649,10 +651,12 @@ illum_surface(vector p, n;
     cl = leval * scale / ALONE_VEC(leval);
 
     l = lp - p;
-    cl *= shadow_light(lid, p, l, Time,
-		       "noantialiasing", 1,
-		       "N", n,
-		       "SID", sid);
+
+    if (shadow)
+	cl *= shadow_light(lid, p, l, Time,
+			   "noantialiasing", 1,
+			   "N", n,
+			   "SID", sid);
 
     if(mask & PBR_DIFFUSE_MASK)
 	{
@@ -834,7 +838,8 @@ raySSS(vector p, n;
        int samples, sid;
        string scope;
        int depth;
-       float depthimp)
+       float depthimp;
+       int shadow)
 {
     BSSRDF bssrdf;
     bssrdf->init(g, eta, ca, cs);
@@ -874,7 +879,7 @@ raySSS(vector p, n;
 	    float weight = exp(-r*r * .5 / bssrdf.mfp)
 		/ (1. + abs(dot(n, hitN)));
 	    vector hitCf = illum_surface(hitP, hitN, eta, sid,
-					depth, depthimp);
+					 depth, depthimp, shadow);
 	    eval += weight * hitCf * bssrdf->eval(Xr, n);
 	    pdf += weight;
 	}
@@ -912,6 +917,7 @@ physurface(int conductor;
 	   int tsamples;	// Number of ray-tracing samples
 	   int vsamples;	// Number of single scattering samples
 	   int ssamples;	// Number of multiple scattering samples
+	   int shadow;		// Receive shadows
 	   int empty;
 	   int useF;		// Use BSDF to compute reflection/refraction
 	   float depthimp;	// Depth importance
@@ -1158,7 +1164,7 @@ physurface(int conductor;
 
     // Single scattering
     RayMarcher singlesss;
-    singlesss->init(_sca, f_VOL, sid, _vsamples, depth, depthimp);
+    singlesss->init(_sca, f_VOL, sid, _vsamples, depth, depthimp, shadow);
 
     // disable separate absorption and single scattering
     // for Raytrace/Micropoly renderers
@@ -1392,6 +1398,7 @@ physurface(int conductor;
     		  thick,
     		  thickness,
     		  depthimp,
+		  shadow,
     		  sid,
     		  depth,
     		  enableDFS, allowSPC, allowTRN, translucent,
@@ -1406,7 +1413,8 @@ physurface(int conductor;
 			 _absty, clrSSS,
 			 _ssamples, sid,
 			 sscope,
-			 depth, depthimp)
+			 depth, depthimp,
+			 shadow)
 	    * factorSSS;
 
     if (enableTRN)

@@ -56,9 +56,9 @@
 
 // Sample light with given position and normal
 #define SAMPLE_LIGHT(PP, NN)			\
-    mask = sample_light(lid, sid,		\
-			  PP, NN, sample,	\
-			  cl, l);		\
+    mask = sample_light(lid, sid, shadow,	\
+			PP, NN, sample,		\
+			cl, l);			\
     l = normalize(l);
 
 #define SET_SAMPLE	vector sample = set(sx, sy, .0);
@@ -71,6 +71,7 @@
 // Wrapper for sample_light and shadow_light
 int
 sample_light(int lid, sid;
+	     int shadow;
 	     vector p, n, sample;
 	     export vector cl, l)
 {
@@ -82,9 +83,11 @@ sample_light(int lid, sid;
 
     cl = eval * scale / ALONE_VEC(eval);
     l = lp - p;
-    cl *= shadow_light(lid, p, l, Time,
-		       "N", n,
-		       "SID", sid);
+
+    if (shadow)
+	cl *= shadow_light(lid, p, l, Time,
+			   "N", n,
+			   "SID", sid);
 
     return mask;
 }
