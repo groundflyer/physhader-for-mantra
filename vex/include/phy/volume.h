@@ -31,6 +31,7 @@
 
 #include <pbr.h>
 #include <phy/utils.h>
+#include <expsampler.h>
 
 
 // volume direct lighting without exports
@@ -114,72 +115,57 @@ illum_volume(vector p, v;
 // Constant density stachaostic raymarching routine
 struct RayMarcher
 {
-    vector _ca;
-    bsdf _f;
-    int _sid;
-    int _samples;
-    int _depth;
-    float _depthimp;
-    int _shadow;
+    vector cs; 			// scattering coefficient
+    bsdf f;			// phase function
+    int sid;
+    int samples;		// number of samples
+    int depth;
+    float depthimp;
+    int doshadow;
 
-    float _sigma;
+    float sigma;
 
     void
-    init(vector ca;
-	 bsdf f;
-	 int sid, samples, depth;
-	 float depthimp;
-	 int shadow)
+    init(vector _cs;
+	 bsdf _f;
+	 int _sid, _samples, _depth;
+	 float _depthimp;
+	 int _doshadow)
     {
-	this._ca = ca;
-	this._f = f;
-	this._sid = sid;
-	this._samples = samples;
-	this._depth = depth;
-	this._depthimp = depthimp;
-	this._shadow = shadow;
+	cs = _cs;
+	f = _f;
+	sid = _sid;
+	samples = _samples;
+	depth = _depth;
+	depthimp = _depthimp;
+	doshadow = _doshadow;
 
-	this._sigma = luminance(ca);
+	sigma = max(cs);
     }
 
-    // Without all "this"'s Mantra get segfault
     vector
     eval(vector p, v;
 	 float raylength)
     {
-	vector ca = this._ca;
-	bsdf f = this._f;
-	int sid = this._sid;
-	int samples = this._samples;
-	int depth = this._depth;
-	float depthimp = this._depthimp;
-	int shadow = this._shadow;
-	float sigma = this._sigma;
-	float pdf = .0;
+	vector accum = .0;
 
-	vector
-	    result = .0,
-	    pp, cl, l;
+	expsampler samp;
+	samp->init(cs, raylength);
 
-	START_SAMPLING("nexpixel");
-	sx *= raylength;
+	START_SAMPLING("decorrelate");
 
-	pp = p + v * sx;
+	vector cl;
+	float spo = samp->sample(cl, sx);
 
-	cl = illum_volume(pp, v, f, sid,
-			  depth, depthimp, shadow)
-	    * exp(-ca * sx);
+	vector pp = p + v * spo;
 
-	float weight = exp(-sigma * sx);
-	pdf += weight;
-	result += cl * weight;
+	cl *= illum_volume(pp, v, f, sid, depth, depthimp, doshadow);
+
+	accum += cl;
 	
 	END_LOOP;
 
-	if (pdf > .0)
-	    result /= pdf;
-
-	return result;
+	return accum / samples;
     }
 };
 
@@ -193,7 +179,7 @@ phyvolume(vector p;
 	  vector scattering;
 	  vector absorption;
 	  float g;
-	  int shadow;
+	  int doshadow;
 	  int constantshadow;
 	  float shadowdensity;
 	  float depthimp;
@@ -227,7 +213,7 @@ phyvolume(vector p;
     else
 	opacity = 1. - exp(-density * dPdz * _absorption);
 
-    illum_volume(p, v, f, diffuse_color, opacity, sid, depth, depthimp, shadow, beauty);
+    illum_volume(p, v, f, diffuse_color, opacity, sid, depth, depthimp, doshadow, beauty);
 
     direct = beauty;
 }
