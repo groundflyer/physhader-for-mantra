@@ -76,10 +76,7 @@
 #define REFRACTION_SAMPLE			\
     vector hn = n - h;				\
     hn = frontface(hn, u, hn);			\
-    if (eta == 1.0)				\
-	v = normalize(hn - u);			\
-    else					\
-	v = refract(-u, h, eta);
+    v = refract(normalize(hn-u), n, eta);
 
 
 // Next routines based on:
