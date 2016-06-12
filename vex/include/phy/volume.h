@@ -115,7 +115,7 @@ illum_volume(vector p, v;
 // Constant density stachaostic raymarching routine
 struct RayMarcher
 {
-    vector cs; 			// scattering coefficient
+    vector ca; 			// absorption coefficient
     bsdf f;			// phase function
     int sid;
     int samples;		// number of samples
@@ -126,13 +126,13 @@ struct RayMarcher
     float sigma;
 
     void
-    init(vector _cs;
+    init(vector _ca;
 	 bsdf _f;
 	 int _sid, _samples, _depth;
 	 float _depthimp;
 	 int _doshadow)
     {
-	cs = _cs;
+	ca = _ca;
 	f = _f;
 	sid = _sid;
 	samples = _samples;
@@ -140,7 +140,7 @@ struct RayMarcher
 	depthimp = _depthimp;
 	doshadow = _doshadow;
 
-	sigma = max(cs);
+	sigma = max(ca);
     }
 
     vector
@@ -150,7 +150,7 @@ struct RayMarcher
 	vector accum = .0;
 
 	expsampler samp;
-	samp->init(cs, raylength);
+	samp->init(ca, raylength);
 
 	START_SAMPLING("decorrelate");
 

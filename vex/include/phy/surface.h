@@ -1164,7 +1164,7 @@ physurface(int conductor;
 
     // Single scattering
     RayMarcher singlesss;
-    singlesss->init(_sca, f_VOL, sid, _vsamples, depth, depthimp, shadow);
+    singlesss->init(_absty, f_VOL, sid, _vsamples, depth, depthimp, shadow);
 
     // disable separate absorption and single scattering
     // for Raytrace/Micropoly renderers
@@ -1462,7 +1462,7 @@ physurface(int conductor;
 		    sh *= clrTRN;
 		}
 	    else if (!enter)
-		sh *= shadowabs(p, _absty);
+		sh *= shadowabs(p, allowsinglesss ? _sca : _absty);
 
 	    opacity = 1. - sh;
 	}
