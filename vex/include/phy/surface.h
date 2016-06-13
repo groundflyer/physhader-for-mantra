@@ -35,7 +35,6 @@
 #include <phy/spectrum.h>
 #include <phy/microfacet.h>
 #include <phy/sss.h>
-#include <phy/volume.h>
 
 
 // Treat surface smooth if roughness below this value

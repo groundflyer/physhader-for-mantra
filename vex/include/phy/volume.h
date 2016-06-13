@@ -31,44 +31,6 @@
 
 #include <pbr.h>
 #include <phy/utils.h>
-#include <expsampler.h>
-
-
-// volume direct lighting without exports
-vector
-illum_volume(vector p, v;
-	     bsdf f;
-	     int sid;
-	     int depth;
-	     float depthimp;
-	     int shadow)
-{
-    vector eval = .0;
-
-    START_ILLUMINANCE;
-
-    vector accum = .0;
-    float pdf = 0;
-
-    START_SAMPLING("nextpixel");
-    SET_SAMPLE;
-
-    SAMPLE_LIGHT(p, v);
-
-    float weight = 0;
-    cl *= eval_bsdf(f, v, l, weight, PBR_VOLUME_MASK);
-
-    pdf += weight;
-    accum += cl * weight;
-
-    END_LOOP; 	// SAMPLING
-
-    eval += accum / pdf;
-
-    END_LOOP; 	// ILLUMINANCE
-
-    return eval;
-}
 
 
 // direct lighting for volume with exports
@@ -110,64 +72,6 @@ illum_volume(vector p, v;
 
     END_LOOP; 	// ILLUMINANCE
 }
-
-
-// Constant density stachaostic raymarching routine
-struct RayMarcher
-{
-    vector ca; 			// absorption coefficient
-    bsdf f;			// phase function
-    int sid;
-    int samples;		// number of samples
-    int depth;
-    float depthimp;
-    int doshadow;
-
-    float sigma;
-
-    void
-    init(vector _ca;
-	 bsdf _f;
-	 int _sid, _samples, _depth;
-	 float _depthimp;
-	 int _doshadow)
-    {
-	ca = _ca;
-	f = _f;
-	sid = _sid;
-	samples = _samples;
-	depth = _depth;
-	depthimp = _depthimp;
-	doshadow = _doshadow;
-
-	sigma = max(ca);
-    }
-
-    vector
-    eval(vector p, v;
-	 float raylength)
-    {
-	vector accum = .0;
-
-	expsampler samp;
-	samp->init(ca, raylength);
-
-	START_SAMPLING("decorrelate");
-
-	vector cl;
-	float spo = samp->sample(cl, sx);
-
-	vector pp = p + v * spo;
-
-	cl *= illum_volume(pp, v, f, sid, depth, depthimp, doshadow);
-
-	accum += cl;
-	
-	END_LOOP;
-
-	return accum / samples;
-    }
-};
 
 
 // Volume model
