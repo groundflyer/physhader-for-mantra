@@ -115,4 +115,29 @@ invert_hue(vector color)
 }
 
 
+// Variance anti-aliasing helper function
+int
+stop_by_variance(float _lum, prevlum, variance;
+		 int isgamma, isample, minraysamples;
+		 export float var)
+{
+    int i1 = isample + 1;
+
+    if (i1 >= minraysamples)
+	{
+	    float lum = _lum;
+	    if (isgamma) lum = sqrt(lum);
+
+	    int samplesize;
+	    float mean;
+	    float newvar = variance(lum - prevlum,
+				    mean, samplesize);
+	    var = (var * isample + newvar) / i1;
+
+	    if (var <= variance*variance)
+		return 1;
+	}
+    return 0;
+}
+
 #endif	//__phy_utils__

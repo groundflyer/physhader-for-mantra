@@ -329,15 +329,9 @@ raytrace(vector p, dir;
 
 #define VARIANCEAA if (dorayvariance)					\
 	{ float lum = luminance(eval) / summ;				\
-	    if (isgamma) lum = sqrt(lum);				\
-	    int _i1 = _i + 1;						\
-	    if (_i1 >= minraysamples)					\
-		{ int samplesize;					\
-		    float mean;						\
-		    float newvar = variance(lum - prevlum,		\
-					    mean, samplesize);		\
-		    var = (var * _i + newvar) / (_i1);			\
-		    if (var <= variance*variance) break; }		\
+	    if (stop_by_variance(lum, prevlum, variance,		\
+				 isgamma, _i, minraysamples, var))	\
+		break;							\
 	    prevlum = lum; }
 
 #define FINALIZE_SAMPLING CONTRIBUTE; VARIANCEAA; END_LOOP; AVERAGE
