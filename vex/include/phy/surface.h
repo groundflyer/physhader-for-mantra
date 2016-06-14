@@ -629,16 +629,13 @@ physurface(int conductor;
 	   vector sellmeierB, sellmeierC; // Sellmeier's coefficients
 	   string gvarSPC, gvarTRN;	  // Gather variables
 	   string sscope;		  // Multiple scattering object scope
+	   float curvature;		  // SSS sampling parameter
+	   string lightmasksss;		  // SSS lightmask
 	   export vector beauty;
 	   export vector opacity;
 	   export bsdf f;
 	   export vector all[])
 {
-    // mock
-    float curvature = 0;
-    string lightmasksss = "*";
-
-
     beauty = .0;
     opacity = 1.;
     vector fullDFS = .0;
