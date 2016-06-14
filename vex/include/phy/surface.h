@@ -628,6 +628,7 @@ physurface(int conductor;
 	   vector tangent;	// Surface derivative
 	   vector sellmeierB, sellmeierC; // Sellmeier's coefficients
 	   string gvarSPC, gvarTRN;	  // Gather variables
+	   float density;		  // Single scattering density
 	   string sscope;		  // Multiple scattering object scope
 	   float curvature;		  // SSS sampling parameter
 	   string lightmasksss;		  // SSS lightmask
@@ -729,9 +730,10 @@ physurface(int conductor;
     // Normalized refraction color
     vector clrTRN = absty / ALONE(kabs);
 
-    // Normalized SSS color
+    // Normalized SSS color 
     vector _clrSSS = clrSSS / ALONE_VEC(clrSSS);
-    vector _sca = invert_hue(clrSSS);
+    // Scattering coefficint
+    vector _sca = density * invert_hue(clrSSS);
 
     // Exponent inverts color. Protect from this.
     vector _absty = invert_hue(absty);
