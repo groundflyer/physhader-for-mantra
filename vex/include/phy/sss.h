@@ -209,31 +209,41 @@ illum_volume(vector p, v;
 	     int sid;
 	     int depth;
 	     float depthimp;
-	     int shadow)
+	     int shadow;
+	     string lightmask)
 {
     vector eval = .0;
 
-    START_ILLUMINANCE;
+    vector l, cl;
+    foreach (int lid; getlights("lightmask", lightmask))
+	{
+	    int mask, samples = 1;
+	    if (setcurrentlight(lid)) {
+		int isarealight = 0;
+		renderstate("light:arealight", isarealight);
+		if (isarealight) {
+		    renderstate("light:maxraysamples", samples);
+		    if (depth && depthimp != 1.)
+			samples = FLOOR_ALONE(samples * pow(depthimp,depth)); } }
 
-    vector accum = .0;
-    float pdf = 0;
+	    vector accum = .0;
+	    float pdf = 0;
 
-    START_SAMPLING("nextpixel");
-    SET_SAMPLE;
+	    START_SAMPLING("nextpixel");
+	    SET_SAMPLE;
 
-    SAMPLE_LIGHT(p, v);
+	    SAMPLE_LIGHT(p, v);
 
-    float weight = 0;
-    cl *= eval_bsdf(f, v, l, weight, PBR_VOLUME_MASK);
+	    float weight = 0;
+	    cl *= eval_bsdf(f, v, l, weight, PBR_VOLUME_MASK);
 
-    pdf += weight;
-    accum += cl * weight;
+	    pdf += weight;
+	    accum += cl * weight;
 
-    END_LOOP; 	// SAMPLING
+	    END_LOOP; 	// SAMPLING
 
-    eval += accum / pdf;
-
-    END_LOOP; 	// ILLUMINANCE
+	    eval += accum / pdf;
+	}
 
     return eval;
 }
@@ -249,13 +259,15 @@ struct RayMarcher
     int depth;
     float depthimp;
     int doshadow;
+    string lightmask;
 
     void
     init(vector _ca;
 	 bsdf _f;
 	 int _sid, _samples, _depth;
 	 float _depthimp;
-	 int _doshadow)
+	 int _doshadow;
+	 string _lightmask)
     {
 	ca = _ca;
 	f = _f;
@@ -264,6 +276,7 @@ struct RayMarcher
 	depth = _depth;
 	depthimp = _depthimp;
 	doshadow = _doshadow;
+	lightmask = _lightmask;
     }
 
     vector
@@ -282,7 +295,7 @@ struct RayMarcher
 
 	vector pp = p + v * spo;
 
-	cl *= illum_volume(pp, v, f, sid, depth, depthimp, doshadow);
+	cl *= illum_volume(pp, v, f, sid, depth, depthimp, doshadow, lightmask);
 
 	accum += cl;
 	

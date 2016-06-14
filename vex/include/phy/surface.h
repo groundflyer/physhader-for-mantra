@@ -869,7 +869,7 @@ physurface(int conductor;
 
     // Single scattering
     RayMarcher singlesss;
-    singlesss->init(_absty, f_VOL, sid, _vsamples, depth, depthimp, shadow);
+    singlesss->init(_absty, f_VOL, sid, _vsamples, depth, depthimp, shadow, lightmasksss);
 
     // disable separate absorption and single scattering
     // for Raytrace/Micropoly renderers
