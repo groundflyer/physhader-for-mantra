@@ -609,7 +609,7 @@ physurface(int conductor;
 	   int oblendSPC, oblendTRN; // Opacity blending
 	   int tsquality;	// Ray-tracing sampling quality
 	   int msquality; 	// Multiple scattering sampling quality
-	   int ssquality;	// Single scattering sampling quality
+	   int vsquality;	// Single scattering sampling quality
 	   int tsamples;	// Number of ray-tracing samples
 	   int vsamples;	// Number of single scattering samples
 	   int ssamples;	// Number of multiple scattering samples
@@ -797,13 +797,13 @@ physurface(int conductor;
 
     // subsurface scattering sampling init
     int _vsamples = vsamples;
-    if (ssquality == 0 && dorayvariance || ssquality == 2)
-	_vsamples = maxraysamples;
-    else if (ssquality == 1)
-	_vsamples = minraysamples;
+    if ((vsquality == 0 && dorayvariance) || (vsquality == 2))
+    	_vsamples = maxraysamples;
+    else if (vsquality == 1)
+    	_vsamples = minraysamples;
 
     int _ssamples = ssamples;
-    if (msquality == 0 && dorayvariance || msquality == 2)
+    if ((msquality == 0 && dorayvariance) || (msquality == 2))
 	_ssamples = maxraysamples;
     else if (msquality == 1)
 	_ssamples = minraysamples;
@@ -864,11 +864,11 @@ physurface(int conductor;
 
     int allowmultisss =
 	allowSSS	&&
-	_ssamples;
+	ssamples;
 
     int allowsinglesss =
 	allowSSS	&&
-	_vsamples;
+	vsamples;
 
     int translucent =
 	enableSSS	&&
@@ -876,7 +876,7 @@ physurface(int conductor;
 
     // Single scattering
     RayMarcher singlesss;
-    singlesss->init(_absty, f_VOL, sid, _vsamples, depth, depthimp, shadow, lightmasksss);
+    singlesss->init(_absty, f_VOL, sid, _vsamples, depth, depthimp, shadow, lightmasksss, dorayvariance, minraysamples, isgamma, variance);
 
     // disable separate absorption and single scattering
     // for Raytrace/Micropoly renderers
@@ -1120,17 +1120,17 @@ physurface(int conductor;
 
     // Compute multiple scattering
     if (allowmultisss)
-	fullSSS = raySSS(p, n,
-			 clrSSS,
-			 eta,
-			 _ssamples, sid,
-			 sscope,
-			 shadow,
-			 curvature,
-			 lightmasksss,
-			 dorayvariance, minraysamples, isgamma,
-			 variance)
-	    * factorSSS;
+    	fullSSS = raySSS(p, n,
+    			 clrSSS,
+    			 eta,
+    			 _ssamples, sid,
+    			 sscope,
+    			 shadow,
+    			 curvature,
+    			 lightmasksss,
+    			 dorayvariance, minraysamples, isgamma,
+    			 variance)
+    	    * factorSSS;
 
     if (enableTRN)
 	{

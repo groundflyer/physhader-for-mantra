@@ -276,13 +276,20 @@ struct RayMarcher
     int doshadow;
     string lightmask;
 
+    int dorayvariance = 0;
+    int minraysamples = 1;
+    int isgamma = 1;
+    float variance = 0.1;
+
     void
     init(vector _ca;
 	 bsdf _f;
 	 int _sid, _samples, _depth;
 	 float _depthimp;
 	 int _doshadow;
-	 string _lightmask)
+	 string _lightmask;
+	 int _dorayvariance, _minraysamples, _isgamma;
+	 float _variance)
     {
 	ca = _ca;
 	f = _f;
@@ -292,6 +299,11 @@ struct RayMarcher
 	depthimp = _depthimp;
 	doshadow = _doshadow;
 	lightmask = _lightmask;
+
+	dorayvariance = _dorayvariance;
+	minraysamples = _minraysamples;
+	isgamma = _isgamma;
+	variance = _variance;
     }
 
     vector
@@ -299,6 +311,8 @@ struct RayMarcher
 	 float raylength)
     {
 	vector accum = .0;
+	float prevlum = 0;
+	float var = 0;
 
 	expsampler samp;
 	samp->init(ca, raylength);
@@ -313,6 +327,15 @@ struct RayMarcher
 	cl *= illum_volume(pp, v, f, sid, depth, depthimp, doshadow, lightmask);
 
 	accum += cl;
+
+	if (dorayvariance)
+	    {
+		float lum = luminance(cl) / (float)samples;
+		if (stop_by_variance(lum, prevlum, variance,
+				     isgamma, _i, minraysamples, var))
+		    break;
+		prevlum = lum;
+	    }
 	
 	END_LOOP;
 
