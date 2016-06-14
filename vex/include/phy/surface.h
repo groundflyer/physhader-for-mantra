@@ -607,7 +607,9 @@ physurface(int conductor;
 	   int dispersion;
 	   int styleSPC, styleTRN;   // How to perform reflection/refraction
 	   int oblendSPC, oblendTRN; // Opacity blending
-	   int squality;	// Sampling quality (see sampling_quality)
+	   int tsquality;	// Ray-tracing sampling quality
+	   int msquality; 	// Multiple scattering sampling quality
+	   int ssquality;	// Single scattering sampling quality
 	   int tsamples;	// Number of ray-tracing samples
 	   int vsamples;	// Number of single scattering samples
 	   int ssamples;	// Number of multiple scattering samples
@@ -779,21 +781,33 @@ physurface(int conductor;
     // Copied variables starts with "_"
     int _tsamples = tsamples;
     if (!smooth)
-	if (useF && !squality && dorayvariance)
+	if (useF && !tsquality && dorayvariance)
 	    // _tsamples as max ray samples
 	    _tsamples = maxraysamples;
 	else
 	    {
-		if (squality == 0)
+		if (tsquality == 0)
 		    _tsamples = floor(lerp(minraysamples, maxraysamples,
 					   max(sigma / MAX_ROUGH,
 					       MAX_ROUGH)));
-		else if (squality == 1) _tsamples = minraysamples;
-		else if (squality == 2) _tsamples = maxraysamples;
+		else if (tsquality == 1) _tsamples = minraysamples;
+		else if (tsquality == 2) _tsamples = maxraysamples;
 	    }
 
+
+    // subsurface scattering sampling init
     int _vsamples = vsamples;
+    if (ssquality == 0 && dorayvariance || ssquality == 2)
+	_vsamples = maxraysamples;
+    else if (ssquality == 1)
+	_vsamples = minraysamples;
+
     int _ssamples = ssamples;
+    if (msquality == 0 && dorayvariance || msquality == 2)
+	_ssamples = maxraysamples;
+    else if (msquality == 1)
+	_ssamples = minraysamples;
+
 
     // Is the total internal reflection case
     int internal = rdir == tdir;
@@ -1113,7 +1127,9 @@ physurface(int conductor;
 			 sscope,
 			 shadow,
 			 curvature,
-			 lightmasksss)
+			 lightmasksss,
+			 dorayvariance, minraysamples, isgamma,
+			 variance)
 	    * factorSSS;
 
     if (enableTRN)

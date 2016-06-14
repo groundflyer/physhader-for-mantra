@@ -150,7 +150,9 @@ raySSS(vector p;
        string scope;
        int doshadow;
        float curvature;
-       string lightmask)
+       string lightmask;
+       int dorayvariance, minraysamples, isgamma;
+       float variance)
 {
     float falb = max(alb);
     float radius = 7.50184474 * pow(falb, 0.78677001);
@@ -160,6 +162,10 @@ raySSS(vector p;
 
     vector eval = .0;
     float pdf = .0;
+
+    // variance aa settings
+    float prevlum = .0;
+    float var = .0;
 
     START_SAMPLING("decorrelate");
 
@@ -195,6 +201,15 @@ raySSS(vector p;
             eval += weight * evalR * irr;
             pdf += weight;
         }
+
+    if (dorayvariance)
+	{
+	    float lum = luminance(eval) / pdf;
+	    if (stop_by_variance(lum, prevlum, variance,
+				 isgamma, _i, minraysamples, var))
+		break;
+	    prevlum = lum;
+	}
 
     END_LOOP;
 
