@@ -634,6 +634,11 @@ physurface(int conductor;
 	   export bsdf f;
 	   export vector all[])
 {
+    // mock
+    float curvature = 0;
+    string lightmasksss = "*";
+
+
     beauty = .0;
     opacity = 1.;
     vector fullDFS = .0;
@@ -1114,7 +1119,8 @@ physurface(int conductor;
 			 _ssamples, sid,
 			 sscope,
 			 shadow,
-			 0)
+			 curvature,
+			 lightmasksss)
 	    * factorSSS;
 
     if (enableTRN)

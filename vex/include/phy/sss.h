@@ -149,7 +149,8 @@ raySSS(vector p;
        int sid;
        string scope;
        int doshadow;
-       float curvature)
+       float curvature;
+       string lightmask)
 {
     float falb = max(alb);
     float radius = 7.50184474 * pow(falb, 0.78677001);
@@ -183,7 +184,7 @@ raySSS(vector p;
               "N", hitN))
         {
             float r = distance(p, hitP);
-            vector irr = illum_surface(hitP, hitN, eta, doshadow, "*");
+            vector irr = illum_surface(hitP, hitN, eta, doshadow, lightmask);
 
             float sval = sy * samp.k3 * samp.max_rand;
             int icomp = sampleExpComp(sval, samp.k1, samp.k2);
