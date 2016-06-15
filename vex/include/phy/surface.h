@@ -592,7 +592,7 @@ thinP(vector p, i, nbN, nfN;
 
 
 // optimize X absorption
-#define OPTABS(X) if (X) { rtAbsty = _absty; rtSSS = allowsinglesss ?  _clrSSS : .0; }
+#define OPTABS(X) if (X) { rtAbsty = _absty; rtSSS = allowsinglesss ?  _sssca : .0; }
 
 
 // The main surface routine
@@ -608,7 +608,8 @@ physurface(int conductor;
 	   float weightDFS, weightSPC, weightTRN, weightSSS;
 	   float roughDFS, roughSPC;
 	   float anisobias;
-	   vector clrSSS;	// Scattering coefficient
+	   vector sssca;	// SSS albedo
+	   vector sssdf;	// SSS diffuse
 	   vector absty;	// Absorption coefficient
 	   float g;		// Scattring phase
 	   int dispersion;
@@ -736,9 +737,9 @@ physurface(int conductor;
     vector clrTRN = absty / ALONE(kabs);
 
     // Normalized SSS color 
-    vector _clrSSS = clrSSS / ALONE_VEC(clrSSS);
+    vector _sssca = sssca / ALONE_VEC(sssca);
     // Scattering coefficint
-    vector _sca = density * invert_hue(clrSSS);
+    vector _sca = density * invert_hue(sssca);
 
     // Exponent inverts color. Protect from this.
     vector _absty = invert_hue(absty);
@@ -1117,12 +1118,12 @@ physurface(int conductor;
     factorDFS = clrDFS * kDFS;
     factorSPC = clrSPC * kSPC * fr * gafmask;
     factorTRN = kTRN * ft * gafrefr * dtint;
-    factorSSS = kSSS;
+    factorSSS = kSSS * sssdf;
 
     // Translucency
     if (thin)
 	{
-	    factorSSS *= _clrSSS;
+	    factorSSS *= _sssca;
 	    factorTRN *= clrTRN * _absTRN;
 	}
 
@@ -1144,7 +1145,7 @@ physurface(int conductor;
     // Compute multiple scattering
     if (allowmultisss)
     	fullSSS = sss_multi(p, n,
-			    clrSSS,
+			    sssca,
 			    eta,
 			    _msamples, sid,
 			    sscope,
