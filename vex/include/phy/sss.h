@@ -130,7 +130,7 @@ reflectance_profile(vector alb;
 
 // returns relative position for sampling
 vector
-sampleSSS(float sx, sy, alb, radius)
+sss_sample_pos(float sx, sy, alb, radius)
 {
     float theta = 2. * PI * sx;
     float tmp = -sy*radius/alb;
@@ -141,18 +141,18 @@ sampleSSS(float sx, sy, alb, radius)
 
 // computes subsurface scattering
 vector
-raySSS(vector p;
-       vector n;
-       vector alb;
-       float eta;
-       int samples;
-       int sid;
-       string scope;
-       int doshadow;
-       float curvature;
-       string lightmask;
-       int dorayvariance, minraysamples, isgamma;
-       float variance)
+sss_multi(vector p;
+	  vector n;
+	  vector alb;
+	  float eta;
+	  int samples;
+	  int sid;
+	  string scope;
+	  int doshadow;
+	  float curvature;
+	  string lightmask;
+	  int dorayvariance, minraysamples, isgamma;
+	  float variance)
 {
     float falb = max(alb);
     float radius = 7.50184474 * pow(falb, 0.78677001);
@@ -171,7 +171,7 @@ raySSS(vector p;
 
     vector randn = normalize(vector(rand(sx))-0.5);
     vector sn = lerp(n, randn, curvature);
-    vector pt = radius * sampleSSS(sx, sy, falb, radius);
+    vector pt = radius * sss_sample_pos(sx, sy, falb, radius);
     vector dir = set(.0, .0, -1.);
     matrix3 basis = rbasis(sy, sn);
     pt = p + pt * basis;

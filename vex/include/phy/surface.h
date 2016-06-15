@@ -1124,16 +1124,16 @@ physurface(int conductor;
 
     // Compute multiple scattering
     if (allowmultisss)
-    	fullSSS = raySSS(p, n,
-    			 clrSSS,
-    			 eta,
-    			 _msamples, sid,
-    			 sscope,
-    			 shadow,
-    			 curvature,
-    			 lightmasksss,
-    			 dorayvariance, minraysamples, isgamma,
-    			 variance)
+    	fullSSS = sss_multi(p, n,
+			    clrSSS,
+			    eta,
+			    _msamples, sid,
+			    sscope,
+			    shadow,
+			    curvature,
+			    lightmasksss,
+			    dorayvariance, minraysamples, isgamma,
+			    variance)
     	    * factorSSS;
 
     if (enableTRN)
