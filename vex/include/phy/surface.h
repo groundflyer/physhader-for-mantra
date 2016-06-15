@@ -612,7 +612,8 @@ physurface(int conductor;
 	   int vsquality;	// Single scattering sampling quality
 	   int tsamples;	// Number of ray-tracing samples
 	   int vsamples;	// Number of single scattering samples
-	   int ssamples;	// Number of multiple scattering samples
+	   int msamples;	// Number of multiple scattering samples
+	   int mdisablesecondary; // Disable secondary multiple scattering
 	   int vdisablesecondary; // Disable secondary single scattering
 	   int shadow;		// Receive shadows
 	   int empty;
@@ -803,11 +804,11 @@ physurface(int conductor;
     else if (vsquality == 1)
     	_vsamples = minraysamples;
 
-    int _ssamples = ssamples;
+    int _msamples = msamples;
     if ((msquality == 0 && dorayvariance) || (msquality == 2))
-	_ssamples = maxraysamples;
+	_msamples = maxraysamples;
     else if (msquality == 1)
-	_ssamples = minraysamples;
+	_msamples = minraysamples;
 
 
     // Is the total internal reflection case
@@ -822,7 +823,7 @@ physurface(int conductor;
 	    float factor = pow(depthimp, depth);
 
 	    _tsamples = FLOOR_ALONE(tsamples * factor);
-	    _ssamples = FLOOR_ALONE(ssamples * factor);
+	    _msamples = FLOOR_ALONE(msamples * factor);
 	    _vsamples = FLOOR_ALONE(vsamples * factor);
 	}
 
@@ -865,7 +866,8 @@ physurface(int conductor;
 
     int allowmultisss =
 	allowSSS	&&
-	ssamples;
+	msamples	&&
+	!(mdisablesecondary && depth);
 
     int allowsinglesss =
 	allowSSS	&&
@@ -1125,7 +1127,7 @@ physurface(int conductor;
     	fullSSS = raySSS(p, n,
     			 clrSSS,
     			 eta,
-    			 _ssamples, sid,
+    			 _msamples, sid,
     			 sscope,
     			 shadow,
     			 curvature,
