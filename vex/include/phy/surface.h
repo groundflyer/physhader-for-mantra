@@ -2,7 +2,7 @@
 //
 //	surface.h - phySurface for Mantra,
 //	Physical based, easy to use, compact surface ubershader.
-//	This is part of phyShader for Mantra.
+//	This is a part of phyShader for Mantra.
 //
 //
 // Copyright (c) 2013-2015 Roman Saldygashev <sldg.roman@gmail.com>
@@ -34,7 +34,7 @@
 #include <phy/utils.h>
 #include <phy/spectrum.h>
 #include <phy/microfacet.h>
-#include <phy/volume.h>
+#include <phy/sss.h>
 
 
 // Treat surface smooth if roughness below this value
@@ -209,7 +209,6 @@ cfresnel(vector v, normal;
     if (raystyle == "reflect") mask = PBR_REFLECT_MASK; \
     string sfilter = oblend ? "opacity" : "closest";	\
     int doabs = (max(absty) > .0);			\
-    int dosss = (max(sss) > .0);			\
     float raylength = .0
 
 // Delta function case
@@ -218,8 +217,10 @@ raytrace(vector p, dir;
 	 float maxdist;
 	 int oblend, style;
 	 string raystyle, scope, variable;
-	 vector absty, sss;
-	 RayMarcher singlesss)
+	 vector absty;
+	 int dosss;
+	 RayMarcher sss_single;
+	 export vector sss)
 {
     INIT_TRACE;
 
@@ -237,8 +238,8 @@ raytrace(vector p, dir;
 				eval = hitCf * exp(-raylength * absty);
 
 				if (dosss)
-				    eval += sss * singlesss->eval(p, dir,
-								  raylength);
+				    sss += sss_single->eval(p, dir,
+							    raylength);
 			    }
 		    }
 		else
@@ -261,8 +262,10 @@ raytrace(vector p, dir;
 	 float angle, maxdist;
 	 int samples, oblend, style;
 	 string raystyle, scope, variable;
-	 vector absty, sss;
-	 RayMarcher singlesss)
+	 vector absty;
+	 int dosss;
+	 RayMarcher sss_single;
+	 export vector sss)
 {
     INIT_TRACE;
 
@@ -289,8 +292,8 @@ raytrace(vector p, dir;
 				tmp += hitCf * exp(-raylength * absty);
 
 				if (dosss)
-				    tmp += sss * singlesss->eval(p, raydir,
-								 raylength);
+				    sss += sss_single->eval(p, raydir,
+							    raylength);
 			    }
 		    }
 		else
@@ -311,6 +314,7 @@ raytrace(vector p, dir;
 		    }
 
 		eval = tmp / samples;
+		sss /= samples;
 	    }
 	else
 	    eval = 2.0 * occlusion(p, dir,
@@ -325,19 +329,13 @@ raytrace(vector p, dir;
 // Use BSDF
 #define SAMPLE_BSDF sample_bsdf(f, v, dir, brdf, pdf, type, sx, sy, mask)
 #define CONTRIBUTE eval += pdf * brdf * tmp; summ += pdf
-#define AVERAGE eval /= summ
+#define AVERAGE if (summ > 0) eval /= summ
 
 #define VARIANCEAA if (dorayvariance)					\
 	{ float lum = luminance(eval) / summ;				\
-	    if (isgamma) lum = sqrt(lum);				\
-	    int _i1 = _i + 1;						\
-	    if (_i1 >= minraysamples)					\
-		{ int samplesize;					\
-		    float mean;						\
-		    float newvar = variance(lum - prevlum,		\
-					    mean, samplesize);		\
-		    var = (var * _i + newvar) / (_i1);			\
-		    if (var <= variance*variance) break; }		\
+	    if (stop_by_variance(lum, prevlum, variance,		\
+				 isgamma, _i, minraysamples, var))	\
+		break;							\
 	    prevlum = lum; }
 
 #define FINALIZE_SAMPLING CONTRIBUTE; VARIANCEAA; END_LOOP; AVERAGE
@@ -351,8 +349,10 @@ raytrace(bsdf f;
 	 int dorayvariance, minraysamples;
 	 float variance;
 	 int isgamma;
-	 vector absty, sss;
-	 RayMarcher singlesss)
+	 vector absty;
+	 int dosss;
+	 RayMarcher sss_single;
+	 export vector sss)
 {
     INIT_TRACE;
 
@@ -391,14 +391,13 @@ raytrace(bsdf f;
 				 variable, hitCf,
 				 "variancevar", hitCf))
 			    {
-				vector scattering = .0;
 				vector absrp = exp(-raylength * absty);
 
 				if (dosss)
-				    scattering = sss * singlesss->eval(p, dir,
-								       raylength);
+				    sss += pdf * sss_single->eval(p, dir,
+								  raylength);
 
-				tmp = max(hitCf, .0) * absrp + scattering;
+				tmp = max(hitCf, .0) * absrp;
 			    }
 		    }
 		else
@@ -409,6 +408,8 @@ raytrace(bsdf f;
 			    tmp = resolvemissedray(dir, Time, mask);
 		    }
 
+		if (summ > 0)
+		    sss /= summ;
 		FINALIZE_SAMPLING;
 	    }
 	else
@@ -441,7 +442,7 @@ absorption(vector p, dir, kabs;
 	   float maxdist;
 	   string scope;
 	   int dosss;
-	   RayMarcher singlesss;
+	   RayMarcher sss_single;
 	   export vector sss)
 {
     INIT_ABSRP;
@@ -453,7 +454,7 @@ absorption(vector p, dir, kabs;
 	    eval = exp(-raylength * kabs);
 
 	    if (dosss)
-		sss = singlesss->eval(p, dir,
+		sss = sss_single->eval(p, dir,
 				      raylength);
 	}
 
@@ -467,7 +468,7 @@ absorption(vector p, dir, kabs;
 	   int samples;
 	   string scope;
 	   int dosss;
-	   RayMarcher singlesss;
+	   RayMarcher sss_single;
 	   export vector sss)
 {
     INIT_ABSRP;
@@ -480,7 +481,7 @@ absorption(vector p, dir, kabs;
 	    eval += exp(-raylength * kabs);
 
 	    if (dosss)
-		sss = singlesss->eval(p, dir,
+		sss = sss_single->eval(p, dir,
 				      raylength);
 	}
 
@@ -590,308 +591,8 @@ thinP(vector p, i, nbN, nfN;
 }
 
 
-// Fresnel angular moment
-// 
-// The approximation provided by
-// d’Eon E., Irving G.: A quantized-diffusion model for
-// rendering translucent materials.
-void
-fresnel_AM(float eta;
-	   export float eval_2C1, eval_3C2)
-{
-    float
-        eta2 = eta * eta,
-        eta3 = eta2 * eta,
-        eta4 = eta2 * eta2,
-        eta5 = eta4 * eta;
-
-    if (eta < 1.0)
-	{
-	    eval_2C1 = 0.919317 - 3.4793*eta + 6.75335*eta2
-		- 7.80989*eta3 + 4.98554*eta4 - 1.36881*eta5;
-
-	    eval_3C2 = 0.828421 - 2.62051*eta + 3.36231*eta2
-		- 1.95284*eta3 + 0.236494*eta4 + 0.145787*eta5;
-	}
-    else
-	{
-	    eval_2C1 = -9.23372 + 22.2272*eta - 20.9292*eta2
-		+ 10.2291*eta3 - 2.54396*eta4 + 0.254913*eta5;
-
-	    eval_3C2 = -1641.1 + 135.926/eta3 - 656.175/eta2
-		+ 1376.53/eta + 1213.67*eta - 568.556*eta2
-		+ 164.798*eta3 - 27.0181*eta4 + 1.91826*eta5;
-	}
-}
-
-
-// Irradiance for sss
-vector
-illum_surface(vector p, n;
-	      float eta;
-	      int sid;
-	      int depth;
-	      float depthimp;
-	      int shadow)
-{
-    vector eval = .0;
-
-    START_ILLUMINANCE;
-    
-    vector accum = .0;
-
-    START_SAMPLING("nextpixel");
-    SET_SAMPLE;
-
-    float scale;
-    vector lp, leval;
-    mask = sample_light(lid, p, sample,
-			Time, lp, leval, scale);
-
-    cl = leval * scale / ALONE_VEC(leval);
-
-    l = lp - p;
-
-    if (shadow)
-	cl *= shadow_light(lid, p, l, Time,
-			   "noantialiasing", 1,
-			   "N", n,
-			   "SID", sid);
-
-    if(mask & PBR_DIFFUSE_MASK)
-	{
-	    float kr, kt;
-	    l = normalize(-l);
-	    fresnel(l, n, eta, kr, kt);
-	    accum += cl * kt;
-	}
-
-    END_LOOP; 			// SAMPLING
-
-    eval += accum/samples;
-
-    END_LOOP;			// ILLUMINANCE
-
-    return eval;
-}
-
-
-// BSSRDF evaluator
-// 
-// Based on:
-// 
-// Eugene d'Eon: A Better Dipole (2012).
-// 
-// Ralf Habel, Per H. Christensen, Wojciech Jarosz:
-// Classical and Improved Diffusion Theory for Subsurface Scattering (2013)
-struct BSSRDF
-{
-    float g;			// Mean scattering cosine
-    float eta;			// Relative IOR
-    vector ca;			// Absorption cross-section
-    vector cs;			// Scattering cross-section
-
-    // Private
-    vector muS_;		// Reduced scattering coefficient
-    vector muT;			// Extinction coefficient
-    vector muT_;		// Reduced extinction
-    vector D;			// Diffusion coefficient
-    vector muTR;		// Transport coefficient
-    vector a_;			// Reduced scattering albedo
-    vector Ce;			// Exitance parameter flux
-    vector Cphi;		// Exitance parameter fluence
-
-    float A_g;			// Reflection parameter
-    float Zb;			// Imaginary depth
-
-    float c1;			// Angular moments
-    float c2;
-
-    float mfp;			// Mean free path
-
-    // Public
-
-    void init(float _g, _eta;
-	      vector _ca, _cs)
-    {
-	g = _g;
-	eta = _eta;
-	ca = _ca;
-	cs = _cs;
-
-	fresnel_AM(eta, c1, c2);
-
-	muS_ = cs * (1.0 - g);
-	muT = cs + ca;
-	muT_ = muS_ + ca;
-
-	A_g = (1.0 + c2) / (1.0 - c1);
-	D = 0.333333333 * (1.0 / muT_ + ca / (muT_ * muT_));
-	muTR = sqrt(ca / D);
-	a_ = muS_ / muT_;
-	Zb = 2.0 * max(D) * A_g;
-	Cphi = 0.25 * (1.0 - c1);
-	Ce = 0.5 * (1.0 - c2);
-
-	mfp = 1. / max(muTR);
-    }
-
-    // BSSRDF approximation
-    // from
-    // Jensen H. W., Marschner S. R., Levoy M., Hanrahan P.:
-    // A Practical Model for Subsurface Light Transport (2001)
-    float approx()
-    {
-	float _a = max(a_);
-	float ea = sqrt(3. * (1. - _a));
-
-	return 0.5
-	    * _a
-	    * (1. + exp(-1.25 * A_g * ea))
-	    * exp(-ea);
-    }
-
-    // Compute the BSSRDF
-    // Xr - vector from incident point to real source
-    // No - output normal
-    vector eval(vector Xr, No)
-    {
-	vector Xrn = normalize(Xr);
-	float kr, kt;
-	vector nf = frontface(No, Xrn);
-
-	float Zra = abs(dot(Xrn, nf));
-
-	float
-	    dR = length(Xr),
-	    Zr = Zra * dR,
-	    Zv = Zr + 2.0 * Zb;
-
-	vector a_2 = a_ * a_;
-	vector Xv = 2. * Zb * nf - Xr;
-
-	float dV = length(Xv);
-	vector
-	    muTRdR = muTR * dR,
-	    muTRdV = muTR * dV,
-	    eSTDr = exp(-muTRdR),
-	    eSTDv = exp(-muTRdV);
-
-	vector Rphi =
-	    Cphi
-	    * a_2 / D
-	    * (eSTDr / (dR + 1.)
-	       - eSTDv / (dV + 1.));
-	vector Re =
-	    Ce
-	    * a_2
-	    * (Zr * eSTDr * (1. + muTRdR) / (dR*dR*dR + 1.)
-	       + Zv * eSTDv * (1. + muTRdV) / (dV*dV*dV + 1.));
-
-	fresnel(Xrn, nf, eta, kr, kt);
-
-	vector _eval = (Rphi + Re) * kt;
-
-	return _eval;
-    }
-}
-
-
-// Compute real source position under point
-vector
-getRSP(vector p, n;
-       float mfp)
-{
-    vector eval = p - n * mfp;
-    return eval;
-}
-
-
-// Improved BSSRDF sampling strategy
-// based on:
-// King A., Kulla C., Conty A., Fajardo M.:
-// BSSRDF Importance Sampling (2013)
-vector
-sampleSSS(float sx, sy, v)
-{
-    float theta = 2. * PI * sx;
-    float z = sqrt(-2. * v * log(1. - v * (1. - exp(-0.5/v))));
-    return set(sy * cos(theta), sy * sin(theta), z);
-}
-
-// Random tranformation matrix
-matrix3
-rand(float sx, sy)
-{
-    vector x = normalize(vector(rand(sx)) - 0.5);
-    vector tmp = normalize(vector(rand(sy)) - 0.5);
-    vector y = cross(x, tmp);
-    vector z = cross(x, y);
-    return set(x, y, z);
-}
-
-
-vector
-raySSS(vector p, n;
-       float eta, g;
-       vector ca, cs;
-       int samples, sid;
-       string scope;
-       int depth;
-       float depthimp;
-       int shadow)
-{
-    BSSRDF bssrdf;
-    bssrdf->init(g, eta, ca, cs);
-
-    float v = max(bssrdf.muTR);
-    float Rm = sqrt(12.46 / v);
-
-    matrix3 basis;
-    vector eval = .0;
-    float pdf = .0;
-
-    START_SAMPLING("nextpixel");
-
-    vector pt = Rm * sampleSSS(sx, sy, v);
-    vector dir = set(.0, .0, -1.);
-    float dist = 2. * Rm * pt.z;
-
-    basis = rand(sx, sy);
-
-    pt = pt * basis + p;
-    dir *= basis;
-
-    vector hitP, hitN;
-
-    if (trace(pt, dir, Time,
-	      "samplefilter", "closest",
-	      "scope", scope,
-	      "maxdist", dist,
-	      "P", hitP,
-	      "N", hitN))
-	{
-	    float r = length(p - hitP);
-	    hitN = normalize(hitN);
-	    vector rsp = getRSP(hitP, hitN, bssrdf.mfp);
-	    vector Xr = rsp - p;
-
-	    float weight = exp(-r*r * .5 / bssrdf.mfp)
-		/ (1. + abs(dot(n, hitN)));
-	    vector hitCf = illum_surface(hitP, hitN, eta, sid,
-					 depth, depthimp, shadow);
-	    eval += weight * hitCf * bssrdf->eval(Xr, n);
-	    pdf += weight;
-	}
-
-    END_LOOP;
-
-    return eval / pdf;
-}
-
-
 // optimize X absorption
-#define OPTABS(X) if (X) { rtAbsty = _absty; rtSSS = allowsinglesss ?  _clrSSS : .0; }
+#define OPTABS(X) if (X) { rtAbsty = _absty; rtSSS = allowsinglesss ?  _sssca : .0; }
 
 
 // The main surface routine
@@ -907,16 +608,21 @@ physurface(int conductor;
 	   float weightDFS, weightSPC, weightTRN, weightSSS;
 	   float roughDFS, roughSPC;
 	   float anisobias;
-	   vector clrSSS;	// Scattering coefficient
+	   vector sssca;	// SSS albedo
+	   vector sssdf;	// SSS diffuse
 	   vector absty;	// Absorption coefficient
 	   float g;		// Scattring phase
 	   int dispersion;
 	   int styleSPC, styleTRN;   // How to perform reflection/refraction
 	   int oblendSPC, oblendTRN; // Opacity blending
-	   int squality;	// Sampling quality (see sampling_quality)
+	   int tsquality;	// Ray-tracing sampling quality
+	   int msquality; 	// Multiple scattering sampling quality
+	   int vsquality;	// Single scattering sampling quality
 	   int tsamples;	// Number of ray-tracing samples
 	   int vsamples;	// Number of single scattering samples
-	   int ssamples;	// Number of multiple scattering samples
+	   int msamples;	// Number of multiple scattering samples
+	   int mdisablesecondary; // Disable secondary multiple scattering
+	   int vdisablesecondary; // Disable secondary single scattering
 	   int shadow;		// Receive shadows
 	   int empty;
 	   int useF;		// Use BSDF to compute reflection/refraction
@@ -928,7 +634,10 @@ physurface(int conductor;
 	   vector tangent;	// Surface derivative
 	   vector sellmeierB, sellmeierC; // Sellmeier's coefficients
 	   string gvarSPC, gvarTRN;	  // Gather variables
+	   float density;		  // Single scattering density
 	   string sscope;		  // Multiple scattering object scope
+	   float curvature;		  // SSS sampling parameter
+	   string lightmasksss;		  // SSS lightmask
 	   export vector beauty;
 	   export vector opacity;
 	   export bsdf f;
@@ -1027,9 +736,10 @@ physurface(int conductor;
     // Normalized refraction color
     vector clrTRN = absty / ALONE(kabs);
 
-    // Normalized SSS color
-    vector _clrSSS = clrSSS / ALONE_VEC(clrSSS);
-    vector _sca = invert_hue(clrSSS);
+    // Normalized SSS color 
+    vector _sssca = sssca / ALONE_VEC(sssca);
+    // Scattering coefficint
+    vector _sca = density * invert_hue(sssca);
 
     // Exponent inverts color. Protect from this.
     vector _absty = invert_hue(absty);
@@ -1081,21 +791,33 @@ physurface(int conductor;
     // Copied variables starts with "_"
     int _tsamples = tsamples;
     if (!smooth)
-	if (useF && !squality && dorayvariance)
+	if (useF && !tsquality && dorayvariance)
 	    // _tsamples as max ray samples
 	    _tsamples = maxraysamples;
 	else
 	    {
-		if (squality == 0)
+		if (tsquality == 0)
 		    _tsamples = floor(lerp(minraysamples, maxraysamples,
 					   max(sigma / MAX_ROUGH,
 					       MAX_ROUGH)));
-		else if (squality == 1) _tsamples = minraysamples;
-		else if (squality == 2) _tsamples = maxraysamples;
+		else if (tsquality == 1) _tsamples = minraysamples;
+		else if (tsquality == 2) _tsamples = maxraysamples;
 	    }
 
+
+    // subsurface scattering sampling init
     int _vsamples = vsamples;
-    int _ssamples = ssamples;
+    if ((vsquality == 0 && dorayvariance) || (vsquality == 2))
+    	_vsamples = maxraysamples;
+    else if (vsquality == 1)
+    	_vsamples = minraysamples;
+
+    int _msamples = msamples;
+    if ((msquality == 0 && dorayvariance) || (msquality == 2))
+	_msamples = maxraysamples;
+    else if (msquality == 1)
+	_msamples = minraysamples;
+
 
     // Is the total internal reflection case
     int internal = rdir == tdir;
@@ -1109,7 +831,7 @@ physurface(int conductor;
 	    float factor = pow(depthimp, depth);
 
 	    _tsamples = FLOOR_ALONE(tsamples * factor);
-	    _ssamples = FLOOR_ALONE(ssamples * factor);
+	    _msamples = FLOOR_ALONE(msamples * factor);
 	    _vsamples = FLOOR_ALONE(vsamples * factor);
 	}
 
@@ -1152,19 +874,21 @@ physurface(int conductor;
 
     int allowmultisss =
 	allowSSS	&&
-	_ssamples;
+	msamples	&&
+	!(mdisablesecondary && depth);
 
     int allowsinglesss =
 	allowSSS	&&
-	_vsamples;
+	vsamples	&&
+    	!(vdisablesecondary && depth);
 
     int translucent =
 	enableSSS	&&
 	thin;
 
     // Single scattering
-    RayMarcher singlesss;
-    singlesss->init(_sca, f_VOL, sid, _vsamples, depth, depthimp, shadow);
+    RayMarcher sss_single;
+    sss_single->init(_absty, f_VOL, sid, _vsamples, depth, depthimp, shadow, lightmasksss, dorayvariance, minraysamples, isgamma, variance);
 
     // disable separate absorption and single scattering
     // for Raytrace/Micropoly renderers
@@ -1266,8 +990,10 @@ physurface(int conductor;
 				    maxdist,
 				    oblendSPC, styleSPC,
 				    "reflect", scopeSPC, gvarSPC,
-				    rtAbsty, rtSSS,
-				    singlesss);
+				    rtAbsty,
+				    allowsinglesss,
+				    sss_single,
+				    singlescattering);
 	    else if (useF)
 		traceSPC = raytrace(f_SPC,
 				    p, v,
@@ -1276,15 +1002,19 @@ physurface(int conductor;
 				    "reflect", scopeSPC, gvarSPC,
 				    dorayvariance, minraysamples,
 				    variance, isgamma,
-				    rtAbsty, rtSSS,
-				    singlesss);
+				    rtAbsty,
+				    allowsinglesss,
+				    sss_single,
+				    singlescattering);
 	    else
 		traceSPC = raytrace(p, rdir,
 				    angle, maxdist,
 				    _tsamples, oblendSPC, styleSPC,
 				    "reflect", scopeSPC, gvarSPC,
-				    rtAbsty, rtSSS,
-				    singlesss);
+				    rtAbsty,
+				    allowsinglesss,
+				    sss_single,
+				    singlescattering);
 	}
 
     // Refraction
@@ -1326,7 +1056,7 @@ physurface(int conductor;
 		    			    maxdist,
 		    			    scopeTRN,
 					    allowsinglesss,
-		    			    singlesss,
+		    			    sss_single,
 		    			    tmpsss);
 		    else
 		    	abstmp = absorption(p, absdir,
@@ -1335,7 +1065,7 @@ physurface(int conductor;
 		    			    _tsamples,
 		    			    scopeTRN,
 					    allowsinglesss,
-		    			    singlesss,
+		    			    sss_single,
 		    			    tmpsss);
 
 		    singlescattering = tmpsss;
@@ -1355,8 +1085,10 @@ physurface(int conductor;
 					    maxdist,
 					    oblendTRN, styleTRN,
 					    "refract", scopeTRN, gvarTRN,
-					    rtAbsty, rtSSS,
-					    singlesss);
+					    rtAbsty,
+					    allowsinglesss,
+					    sss_single,
+					    singlescattering);
 		    else if (useF)
 			traceTRN = raytrace(f_TRN,
 					    pTRN, v,
@@ -1365,15 +1097,19 @@ physurface(int conductor;
 					    "refract", scopeTRN, gvarTRN,
 					    dorayvariance, minraysamples,
 					    variance, isgamma,
-					    rtAbsty, rtSSS,
-					    singlesss);
+					    rtAbsty,
+					    allowsinglesss,
+					    sss_single,
+					    singlescattering);
 		    else
 			traceTRN = raytrace(pTRN, tdir,
 					    angle, maxdist,
 					    _tsamples, oblendTRN, styleTRN,
 					    "refract", scopeTRN, gvarTRN,
-					    rtAbsty, rtSSS,
-					    singlesss);
+					    rtAbsty,
+					    allowsinglesss,
+					    sss_single,
+					    singlescattering);
 		}
 	}
 
@@ -1382,12 +1118,12 @@ physurface(int conductor;
     factorDFS = clrDFS * kDFS;
     factorSPC = clrSPC * kSPC * fr * gafmask;
     factorTRN = kTRN * ft * gafrefr * dtint;
-    factorSSS = kSSS;
+    factorSSS = kSSS * sssdf;
 
     // Translucency
     if (thin)
 	{
-	    factorSSS *= _clrSSS;
+	    factorSSS *= _sssca;
 	    factorTRN *= clrTRN * _absTRN;
 	}
 
@@ -1408,14 +1144,17 @@ physurface(int conductor;
 
     // Compute multiple scattering
     if (allowmultisss)
-	fullSSS = raySSS(p, n,
-			 eta, g,
-			 _absty, clrSSS,
-			 _ssamples, sid,
-			 sscope,
-			 depth, depthimp,
-			 shadow)
-	    * factorSSS;
+    	fullSSS = sss_multi(p, n,
+			    sssca,
+			    eta,
+			    _msamples, sid,
+			    sscope,
+			    shadow,
+			    curvature,
+			    lightmasksss,
+			    dorayvariance, minraysamples, isgamma,
+			    variance)
+    	    * factorSSS;
 
     if (enableTRN)
 	{
@@ -1462,7 +1201,7 @@ physurface(int conductor;
 		    sh *= clrTRN;
 		}
 	    else if (!enter)
-		sh *= shadowabs(p, _absty);
+		sh *= shadowabs(p, allowsinglesss ? _sca : _absty);
 
 	    opacity = 1. - sh;
 	}
