@@ -2,7 +2,7 @@
 //
 //	surface.h - phySurface for Mantra,
 //	Physical based, easy to use, compact surface ubershader.
-//	This is part of phyShader for Mantra.
+//	This is a part of phyShader for Mantra.
 //
 //
 // Copyright (c) 2013-2015 Roman Saldygashev <sldg.roman@gmail.com>
@@ -613,6 +613,7 @@ physurface(int conductor;
 	   int tsamples;	// Number of ray-tracing samples
 	   int vsamples;	// Number of single scattering samples
 	   int ssamples;	// Number of multiple scattering samples
+	   int vdisablesecondary; // Disable secondary single scattering
 	   int shadow;		// Receive shadows
 	   int empty;
 	   int useF;		// Use BSDF to compute reflection/refraction
@@ -868,7 +869,8 @@ physurface(int conductor;
 
     int allowsinglesss =
 	allowSSS	&&
-	vsamples;
+	vsamples	&&
+    	!(vdisablesecondary && depth);
 
     int translucent =
 	enableSSS	&&
