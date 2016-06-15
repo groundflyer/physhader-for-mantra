@@ -40,68 +40,55 @@ illum_surface(vector p, n;
 	      int sid;
 	      int depth;
 	      float depthimp;
-	      int shadow)
+	      int doshadow;
+	      string lightmask)
 {
     vector eval = .0;
 
-    START_ILLUMINANCE;
-    
-    vector accum = .0;
-
-    START_SAMPLING("nextpixel");
-    SET_SAMPLE;
-
-    float scale;
-    vector lp, leval;
-    mask = sample_light(lid, p, sample,
-			Time, lp, leval, scale);
-
-    cl = leval * scale / ALONE_VEC(leval);
-
-    l = lp - p;
-
-    if (shadow)
-	cl *= shadow_light(lid, p, l, Time,
-			   "noantialiasing", 1,
-			   "N", n,
-			   "SID", sid);
-
-    if(mask & bouncemask("sss"))
+    foreach (int lid; getlights("lightmask", lightmask))
 	{
-	    float kr, kt;
-	    l = normalize(-l);
-	    fresnel(l, n, eta, kr, kt);
-	    accum += cl * kt;
+	    int mask, samples = 1;
+	    if (setcurrentlight(lid)) {
+		int isarealight = 0;
+		renderstate("light:arealight", isarealight);
+		if (isarealight) {
+		    renderstate("light:maxraysamples", samples);
+		    if (depth && depthimp != 1.)
+			samples = FLOOR_ALONE(samples * pow(depthimp,depth)); } }
+    
+	    vector accum = .0;
+
+	    START_SAMPLING("nextpixel");
+	    SET_SAMPLE;
+
+	    float scale;
+	    vector lp, leval;
+	    mask = sample_light(lid, p, sample,
+				Time, lp, leval, scale);
+
+	    vector cl = leval * scale / ALONE_VEC(leval);
+
+	    vector l = lp - p;
+
+	    if (doshadow)
+		cl *= shadow_light(lid, p, l, Time,
+				   "noantialiasing", 1,
+				   "N", n,
+				   "SID", sid);
+
+	    if(mask & bouncemask("sss"))
+		{
+		    float kr, kt;
+		    l = normalize(-l);
+		    fresnel(l, n, eta, kr, kt);
+		    accum += cl * kt * max(dot(n, -l), .0);
+		}
+
+	    END_LOOP; 			// SAMPLING
+
+	    eval += accum/samples;
+
 	}
-
-    END_LOOP; 			// SAMPLING
-
-    eval += accum/samples;
-
-    END_LOOP;			// ILLUMINANCE
-
-    return eval;
-}
-
-// faster irradiance
-vector
-illum_surface(vector p, n;
-              float eta;
-              int doshadow;
-              string lightmask)
-{
-    vector eval = .0;
-
-    illuminance(p, n, PI, bouncemask("sss"), "lightmask", lightmask)
-        {
-            if (doshadow)
-                shadow(Cl);
-
-            float kr, kt;
-            vector l = normalize(-L);
-            fresnel(l, n, eta, kr, kt);
-            eval += Cl * kt;
-        }
 
     return eval;
 }
@@ -151,6 +138,8 @@ sss_multi(vector p;
 	  int doshadow;
 	  float curvature;
 	  string lightmask;
+	  int depth;
+	  float depthimp;
 	  int dorayvariance, minraysamples, isgamma;
 	  float variance)
 {
@@ -174,8 +163,8 @@ sss_multi(vector p;
     vector pt = radius * sss_sample_pos(sx, sy, falb, radius);
     vector dir = set(.0, .0, -1.);
     matrix3 basis = rbasis(sy, sn);
-    pt = p + pt * basis;
-    dir *= basis;
+    pt = p + ptransform(pt, basis);
+    dir = ntransform(dir, basis);
 
     vector hitP, hitN;
 
@@ -190,13 +179,16 @@ sss_multi(vector p;
               "N", hitN))
         {
             float r = distance(p, hitP);
-            vector irr = illum_surface(hitP, hitN, eta, doshadow, lightmask);
+            vector irr = illum_surface(hitP, normalize(hitN),
+				       eta,
+				       sid, depth, depthimp,
+				       doshadow, lightmask);
 
             float sval = sy * samp.k3 * samp.max_rand;
             int icomp = sampleExpComp(sval, samp.k1, samp.k2);
 
             vector evalR = reflectance_profile(alb, r);
-            float weight = 1 / exp(-samp.ext_sort[icomp] * r) * samp.ext_sort[icomp];
+            float weight = 1. / exp(-samp.ext_sort[icomp] * r) * samp.ext_sort[icomp];
 
             eval += weight * evalR * irr;
             pdf += weight;
@@ -213,7 +205,7 @@ sss_multi(vector p;
 
     END_LOOP;
 
-    return 4.2 * eval / pdf;
+    return eval / pdf;
 }
 
 

@@ -1152,6 +1152,7 @@ physurface(int conductor;
 			    shadow,
 			    curvature,
 			    lightmasksss,
+			    depth, depthimp,
 			    dorayvariance, minraysamples, isgamma,
 			    variance)
     	    * factorSSS;
