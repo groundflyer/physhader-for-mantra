@@ -209,7 +209,6 @@ cfresnel(vector v, normal;
     if (raystyle == "reflect") mask = PBR_REFLECT_MASK; \
     string sfilter = oblend ? "opacity" : "closest";	\
     int doabs = (max(absty) > .0);			\
-    int dosss = (max(sss) > .0);			\
     float raylength = .0
 
 // Delta function case
@@ -218,8 +217,10 @@ raytrace(vector p, dir;
 	 float maxdist;
 	 int oblend, style;
 	 string raystyle, scope, variable;
-	 vector absty, sss;
-	 RayMarcher singlesss)
+	 vector absty;
+	 int dosss;
+	 RayMarcher sss_single;
+	 export vector sss)
 {
     INIT_TRACE;
 
@@ -237,8 +238,8 @@ raytrace(vector p, dir;
 				eval = hitCf * exp(-raylength * absty);
 
 				if (dosss)
-				    eval += sss * singlesss->eval(p, dir,
-								  raylength);
+				    sss += sss_single->eval(p, dir,
+							    raylength);
 			    }
 		    }
 		else
@@ -261,8 +262,10 @@ raytrace(vector p, dir;
 	 float angle, maxdist;
 	 int samples, oblend, style;
 	 string raystyle, scope, variable;
-	 vector absty, sss;
-	 RayMarcher singlesss)
+	 vector absty;
+	 int dosss;
+	 RayMarcher sss_single;
+	 export vector sss)
 {
     INIT_TRACE;
 
@@ -289,8 +292,8 @@ raytrace(vector p, dir;
 				tmp += hitCf * exp(-raylength * absty);
 
 				if (dosss)
-				    tmp += sss * singlesss->eval(p, raydir,
-								 raylength);
+				    sss += sss_single->eval(p, raydir,
+							    raylength);
 			    }
 		    }
 		else
@@ -311,6 +314,7 @@ raytrace(vector p, dir;
 		    }
 
 		eval = tmp / samples;
+		sss /= samples;
 	    }
 	else
 	    eval = 2.0 * occlusion(p, dir,
@@ -325,7 +329,7 @@ raytrace(vector p, dir;
 // Use BSDF
 #define SAMPLE_BSDF sample_bsdf(f, v, dir, brdf, pdf, type, sx, sy, mask)
 #define CONTRIBUTE eval += pdf * brdf * tmp; summ += pdf
-#define AVERAGE eval /= summ
+#define AVERAGE if (summ > 0) eval /= summ
 
 #define VARIANCEAA if (dorayvariance)					\
 	{ float lum = luminance(eval) / summ;				\
@@ -345,8 +349,10 @@ raytrace(bsdf f;
 	 int dorayvariance, minraysamples;
 	 float variance;
 	 int isgamma;
-	 vector absty, sss;
-	 RayMarcher singlesss)
+	 vector absty;
+	 int dosss;
+	 RayMarcher sss_single;
+	 export vector sss)
 {
     INIT_TRACE;
 
@@ -385,14 +391,13 @@ raytrace(bsdf f;
 				 variable, hitCf,
 				 "variancevar", hitCf))
 			    {
-				vector scattering = .0;
 				vector absrp = exp(-raylength * absty);
 
 				if (dosss)
-				    scattering = sss * singlesss->eval(p, dir,
-								       raylength);
+				    sss += pdf * sss_single->eval(p, dir,
+								  raylength);
 
-				tmp = max(hitCf, .0) * absrp + scattering;
+				tmp = max(hitCf, .0) * absrp;
 			    }
 		    }
 		else
@@ -403,6 +408,8 @@ raytrace(bsdf f;
 			    tmp = resolvemissedray(dir, Time, mask);
 		    }
 
+		if (summ > 0)
+		    sss /= summ;
 		FINALIZE_SAMPLING;
 	    }
 	else
@@ -435,7 +442,7 @@ absorption(vector p, dir, kabs;
 	   float maxdist;
 	   string scope;
 	   int dosss;
-	   RayMarcher singlesss;
+	   RayMarcher sss_single;
 	   export vector sss)
 {
     INIT_ABSRP;
@@ -447,7 +454,7 @@ absorption(vector p, dir, kabs;
 	    eval = exp(-raylength * kabs);
 
 	    if (dosss)
-		sss = singlesss->eval(p, dir,
+		sss = sss_single->eval(p, dir,
 				      raylength);
 	}
 
@@ -461,7 +468,7 @@ absorption(vector p, dir, kabs;
 	   int samples;
 	   string scope;
 	   int dosss;
-	   RayMarcher singlesss;
+	   RayMarcher sss_single;
 	   export vector sss)
 {
     INIT_ABSRP;
@@ -474,7 +481,7 @@ absorption(vector p, dir, kabs;
 	    eval += exp(-raylength * kabs);
 
 	    if (dosss)
-		sss = singlesss->eval(p, dir,
+		sss = sss_single->eval(p, dir,
 				      raylength);
 	}
 
@@ -879,8 +886,8 @@ physurface(int conductor;
 	thin;
 
     // Single scattering
-    RayMarcher singlesss;
-    singlesss->init(_absty, f_VOL, sid, _vsamples, depth, depthimp, shadow, lightmasksss, dorayvariance, minraysamples, isgamma, variance);
+    RayMarcher sss_single;
+    sss_single->init(_absty, f_VOL, sid, _vsamples, depth, depthimp, shadow, lightmasksss, dorayvariance, minraysamples, isgamma, variance);
 
     // disable separate absorption and single scattering
     // for Raytrace/Micropoly renderers
@@ -982,8 +989,10 @@ physurface(int conductor;
 				    maxdist,
 				    oblendSPC, styleSPC,
 				    "reflect", scopeSPC, gvarSPC,
-				    rtAbsty, rtSSS,
-				    singlesss);
+				    rtAbsty,
+				    allowsinglesss,
+				    sss_single,
+				    singlescattering);
 	    else if (useF)
 		traceSPC = raytrace(f_SPC,
 				    p, v,
@@ -992,15 +1001,19 @@ physurface(int conductor;
 				    "reflect", scopeSPC, gvarSPC,
 				    dorayvariance, minraysamples,
 				    variance, isgamma,
-				    rtAbsty, rtSSS,
-				    singlesss);
+				    rtAbsty,
+				    allowsinglesss,
+				    sss_single,
+				    singlescattering);
 	    else
 		traceSPC = raytrace(p, rdir,
 				    angle, maxdist,
 				    _tsamples, oblendSPC, styleSPC,
 				    "reflect", scopeSPC, gvarSPC,
-				    rtAbsty, rtSSS,
-				    singlesss);
+				    rtAbsty,
+				    allowsinglesss,
+				    sss_single,
+				    singlescattering);
 	}
 
     // Refraction
@@ -1042,7 +1055,7 @@ physurface(int conductor;
 		    			    maxdist,
 		    			    scopeTRN,
 					    allowsinglesss,
-		    			    singlesss,
+		    			    sss_single,
 		    			    tmpsss);
 		    else
 		    	abstmp = absorption(p, absdir,
@@ -1051,7 +1064,7 @@ physurface(int conductor;
 		    			    _tsamples,
 		    			    scopeTRN,
 					    allowsinglesss,
-		    			    singlesss,
+		    			    sss_single,
 		    			    tmpsss);
 
 		    singlescattering = tmpsss;
@@ -1071,8 +1084,10 @@ physurface(int conductor;
 					    maxdist,
 					    oblendTRN, styleTRN,
 					    "refract", scopeTRN, gvarTRN,
-					    rtAbsty, rtSSS,
-					    singlesss);
+					    rtAbsty,
+					    allowsinglesss,
+					    sss_single,
+					    singlescattering);
 		    else if (useF)
 			traceTRN = raytrace(f_TRN,
 					    pTRN, v,
@@ -1081,15 +1096,19 @@ physurface(int conductor;
 					    "refract", scopeTRN, gvarTRN,
 					    dorayvariance, minraysamples,
 					    variance, isgamma,
-					    rtAbsty, rtSSS,
-					    singlesss);
+					    rtAbsty,
+					    allowsinglesss,
+					    sss_single,
+					    singlescattering);
 		    else
 			traceTRN = raytrace(pTRN, tdir,
 					    angle, maxdist,
 					    _tsamples, oblendTRN, styleTRN,
 					    "refract", scopeTRN, gvarTRN,
-					    rtAbsty, rtSSS,
-					    singlesss);
+					    rtAbsty,
+					    allowsinglesss,
+					    sss_single,
+					    singlescattering);
 		}
 	}
 
