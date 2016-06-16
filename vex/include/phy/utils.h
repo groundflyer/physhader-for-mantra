@@ -140,4 +140,42 @@ stop_by_variance(float _lum, prevlum, variance;
     return 0;
 }
 
+
+struct VarianceSampler
+{
+    int dorayvariance = 0;
+    int isgamma = 1;
+    float variance = 0.01;
+    int minraysamples = 1;
+    int maxraysamples = 1;
+
+    float prevlum = .0;
+    float var = .0;
+
+    int
+    stop_by_variance(const float _lum; const int isample)
+    {
+	int i1 = isample + 1;
+
+	if (i1 >= minraysamples)
+	    {
+		float lum = _lum;
+		if (isgamma) lum = sqrt(lum);
+
+		int samplesize;
+		float mean;
+		float newvar = variance(lum - prevlum,
+					mean, samplesize);
+
+		var = (var * isample + newvar) / i1;
+		prevlum = lum;
+
+		if (var <= variance*variance)
+		    return 1;
+	    }
+	return 0;
+    }
+};
+
+
 #endif	//__phy_utils__

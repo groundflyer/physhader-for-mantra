@@ -331,12 +331,9 @@ raytrace(vector p, dir;
 #define CONTRIBUTE eval += pdf * brdf * tmp; summ += pdf
 #define AVERAGE if (summ > 0) eval /= summ
 
-#define VARIANCEAA if (dorayvariance)					\
+#define VARIANCEAA if (vsampler.dorayvariance)				\
 	{ float lum = luminance(eval) / summ;				\
-	    if (stop_by_variance(lum, prevlum, variance,		\
-				 isgamma, _i, minraysamples, var))	\
-		break;							\
-	    prevlum = lum; }
+	    if (vsampler->stop_by_variance(lum, _i)) break; }
 
 #define FINALIZE_SAMPLING CONTRIBUTE; VARIANCEAA; END_LOOP; AVERAGE
 
@@ -364,6 +361,15 @@ raytrace(bsdf f;
     float summ = .0;
     float prevlum = .0;
     float var = .0;
+
+    VarianceSampler vsampler;
+    vsampler.dorayvariance = dorayvariance;
+    vsampler.isgamma = 1;
+    vsampler.variance = variance;
+    vsampler.minraysamples = minraysamples;
+    vsampler.prevlum = .0;
+    vsampler.var = .0;
+
 
     if (maxdist == .0)
 	{
