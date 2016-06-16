@@ -155,8 +155,10 @@ struct VarianceSampler
     int
     stop_by_variance(const float _lum; const int isample)
     {
-	int i1 = isample + 1;
+	if (!dorayvariance)
+	    return 0;
 
+	int i1 = isample + 1;
 	if (i1 >= minraysamples)
 	    {
 		float lum = _lum;
@@ -177,5 +179,58 @@ struct VarianceSampler
     }
 };
 
+
+struct SamplingFactory
+{
+    float variance;
+    int dorayvariance;
+    int isgamma;
+    int minraysamples;
+    int maxraysamples;
+
+    void init()
+    {
+	renderstate("object:variance", variance);
+	renderstate("object:dorayvariance", dorayvariance);
+	renderstate("light:maxraysamples", maxraysamples);
+	renderstate("light:minraysamples", minraysamples);
+	string colorspace;
+	renderstate("renderer:colorspace", colorspace);
+	isgamma = colorspace == "gamma";
+    }
+
+    VarianceSampler
+    getsampler(int quality; int nsamples)
+    {
+	VarianceSampler ret;
+
+	// Sampling quality
+	//	0 - Auto (dorayvariance)
+	//	1 - minraysamples
+	//	2 - maxraysamples
+	//	3 - _nsamples
+	if (quality == 0)
+	    {
+		ret.dorayvariance = 1;
+		ret.maxraysamples = maxraysamples;
+		ret.minraysamples = minraysamples;
+		ret.isgamma = isgamma;
+		ret.variance = variance;
+	    }
+	else
+	    {
+		ret.dorayvariance = 0;
+
+		if (quality == 1)
+		    ret.maxraysamples = minraysamples;
+		else if (quality == 2)
+		    ret.maxraysamples = maxraysamples;
+		else
+		    ret.maxraysamples = nsamples;
+	    }
+
+	return ret;
+    }
+};
 
 #endif	//__phy_utils__

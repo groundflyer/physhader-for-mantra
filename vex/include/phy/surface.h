@@ -341,12 +341,10 @@ vector
 raytrace(bsdf f;
 	 vector p, v;
 	 float maxdist;
-	 int sid, samples, oblend, style;
+	 int sid, oblend, style;
 	 string raystyle, scope, variable;
-	 int dorayvariance, minraysamples;
-	 float variance;
-	 int isgamma;
 	 vector absty;
+	 VarianceSampler vsampler;
 	 int dosss;
 	 RayMarcher sss_single;
 	 export vector sss)
@@ -359,16 +357,8 @@ raytrace(bsdf f;
     vector tmp = 0;
     float pdf = 0;
     float summ = .0;
-    float prevlum = .0;
-    float var = .0;
 
-    VarianceSampler vsampler;
-    vsampler.dorayvariance = dorayvariance;
-    vsampler.isgamma = 1;
-    vsampler.variance = variance;
-    vsampler.minraysamples = minraysamples;
-    vsampler.prevlum = .0;
-    vsampler.var = .0;
+    int samples = vsampler.maxraysamples;
 
 
     if (maxdist == .0)
@@ -794,21 +784,8 @@ physurface(int conductor;
     renderstate("light:maxraysamples", maxraysamples);
     renderstate("light:minraysamples", minraysamples);
 
-    // Copied variables starts with "_"
-    int _tsamples = tsamples;
-    if (!smooth)
-	if (useF && !tsquality && dorayvariance)
-	    // _tsamples as max ray samples
-	    _tsamples = maxraysamples;
-	else
-	    {
-		if (tsquality == 0)
-		    _tsamples = floor(lerp(minraysamples, maxraysamples,
-					   max(sigma / MAX_ROUGH,
-					       MAX_ROUGH)));
-		else if (tsquality == 1) _tsamples = minraysamples;
-		else if (tsquality == 2) _tsamples = maxraysamples;
-	    }
+    SamplingFactory sfactory;
+    sfactory->init();
 
 
     // subsurface scattering sampling init
@@ -832,6 +809,8 @@ physurface(int conductor;
     int thick = thin && thickness > .0;
 
     // Recompute number of samples by the depth importance
+    int _tsamples = tsamples;
+
     if (depth && depthimp < 1.)
 	{
 	    float factor = pow(depthimp, depth);
@@ -840,6 +819,9 @@ physurface(int conductor;
 	    _msamples = FLOOR_ALONE(msamples * factor);
 	    _vsamples = FLOOR_ALONE(vsamples * factor);
 	}
+
+    // raytracing variance aa
+    VarianceSampler tvsampler = sfactory->getsampler(tsquality, _tsamples);
 
     // Ray-tracing scope
     string scopeSPC = "scope:default";
@@ -1004,18 +986,18 @@ physurface(int conductor;
 		traceSPC = raytrace(f_SPC,
 				    p, v,
 				    maxdist,
-				    sid, _tsamples, oblendSPC, styleSPC,
+				    sid, oblendSPC, styleSPC,
 				    "reflect", scopeSPC, gvarSPC,
-				    dorayvariance, minraysamples,
-				    variance, isgamma,
 				    rtAbsty,
+				    tvsampler,
 				    allowsinglesss,
 				    sss_single,
 				    singlescattering);
 	    else
 		traceSPC = raytrace(p, rdir,
 				    angle, maxdist,
-				    _tsamples, oblendSPC, styleSPC,
+				    tvsampler.maxraysamples,
+				    oblendSPC, styleSPC,
 				    "reflect", scopeSPC, gvarSPC,
 				    rtAbsty,
 				    allowsinglesss,
@@ -1068,7 +1050,7 @@ physurface(int conductor;
 		    	abstmp = absorption(p, absdir,
 		    			    _absty,
 		    			    maxdist, angle,
-		    			    _tsamples,
+		    			    tvsampler.maxraysamples,
 		    			    scopeTRN,
 					    allowsinglesss,
 		    			    sss_single,
@@ -1099,18 +1081,18 @@ physurface(int conductor;
 			traceTRN = raytrace(f_TRN,
 					    pTRN, v,
 					    maxdist,
-					    sid, _tsamples, oblendTRN, styleTRN,
+					    sid, oblendTRN, styleTRN,
 					    "refract", scopeTRN, gvarTRN,
-					    dorayvariance, minraysamples,
-					    variance, isgamma,
 					    rtAbsty,
+					    tvsampler,
 					    allowsinglesss,
 					    sss_single,
 					    singlescattering);
 		    else
 			traceTRN = raytrace(pTRN, tdir,
 					    angle, maxdist,
-					    _tsamples, oblendTRN, styleTRN,
+					    tvsampler.maxraysamples,
+					    oblendTRN, styleTRN,
 					    "refract", scopeTRN, gvarTRN,
 					    rtAbsty,
 					    allowsinglesss,
