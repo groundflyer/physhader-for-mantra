@@ -331,9 +331,7 @@ raytrace(vector p, dir;
 #define CONTRIBUTE eval += pdf * brdf * tmp; summ += pdf
 #define AVERAGE if (summ > 0) eval /= summ
 
-#define VARIANCEAA if (vsampler.dorayvariance)				\
-	{ float lum = luminance(eval) / summ;				\
-	    if (vsampler->stop_by_variance(lum, _i)) break; }
+#define VARIANCEAA if (vsampler->stop_by_variance(max(eval)/summ, _i)) break;
 
 #define FINALIZE_SAMPLING CONTRIBUTE; VARIANCEAA; END_LOOP; AVERAGE
 
@@ -357,9 +355,7 @@ raytrace(bsdf f;
     vector tmp = 0;
     float pdf = 0;
     float summ = .0;
-
     int samples = vsampler.maxraysamples;
-
 
     if (maxdist == .0)
 	{
@@ -770,58 +766,21 @@ physurface(int conductor;
     // Ray is directed inside object
     int	enter = dot(n, ni) < .0;
 
-    int depth = getraylevel() + getglobalraylevel();
-
-    // tracing samples
-    float variance;
-    renderstate("object:variance", variance);
-    int dorayvariance;
-    renderstate("object:dorayvariance", dorayvariance);
-    string colorspace;
-    renderstate("renderer:colorspace", colorspace);
-    int isgamma = colorspace == "gamma";
-    int maxraysamples, minraysamples;
-    renderstate("light:maxraysamples", maxraysamples);
-    renderstate("light:minraysamples", minraysamples);
-
-    SamplingFactory sfactory;
-    sfactory->init();
-
-
-    // subsurface scattering sampling init
-    int _vsamples = vsamples;
-    if ((vsquality == 0 && dorayvariance) || (vsquality == 2))
-    	_vsamples = maxraysamples;
-    else if (vsquality == 1)
-    	_vsamples = minraysamples;
-
-    int _msamples = msamples;
-    if ((msquality == 0 && dorayvariance) || (msquality == 2))
-	_msamples = maxraysamples;
-    else if (msquality == 1)
-	_msamples = minraysamples;
-
-
     // Is the total internal reflection case
     int internal = rdir == tdir;
 
     int solid = !thin;
     int thick = thin && thickness > .0;
 
-    // Recompute number of samples by the depth importance
-    int _tsamples = tsamples;
 
-    if (depth && depthimp < 1.)
-	{
-	    float factor = pow(depthimp, depth);
-
-	    _tsamples = FLOOR_ALONE(tsamples * factor);
-	    _msamples = FLOOR_ALONE(msamples * factor);
-	    _vsamples = FLOOR_ALONE(vsamples * factor);
-	}
+    int depth = max(getraylevel(), getglobalraylevel());
+    SamplingFactory sfactory;
+    sfactory->init(depth, depthimp);
 
     // raytracing variance aa
-    VarianceSampler tvsampler = sfactory->getsampler(tsquality, _tsamples);
+    VarianceSampler tvsampler = sfactory->getsampler(tsquality, tsamples);
+    // multiple scattering variance aa
+    VarianceSampler mvsampler = sfactory->getsampler(msquality, msamples);
 
     // Ray-tracing scope
     string scopeSPC = "scope:default";
@@ -876,7 +835,14 @@ physurface(int conductor;
 
     // Single scattering
     RayMarcher sss_single;
-    sss_single->init(_absty, f_VOL, sid, _vsamples, depth, depthimp, shadow, lightmasksss, dorayvariance, minraysamples, isgamma, variance);
+    sss_single.ca = _absty;
+    sss_single.f = f_VOL;
+    sss_single.sid = sid;
+    sss_single.depth = depth;
+    sss_single.depthimp = depthimp;
+    sss_single.doshadow = shadow;
+    sss_single.lightmask = lightmasksss;
+    sss_single.vsampler = sfactory->getsampler(vsquality, vsamples);
 
     // disable separate absorption and single scattering
     // for Raytrace/Micropoly renderers
@@ -1135,14 +1101,13 @@ physurface(int conductor;
     	fullSSS = sss_multi(p, n,
 			    sssca,
 			    eta,
-			    _msamples, sid,
+			    sid,
 			    sscope,
 			    shadow,
 			    curvature,
 			    lightmasksss,
 			    depth, depthimp,
-			    dorayvariance, minraysamples, isgamma,
-			    variance)
+			    mvsampler)
     	    * factorSSS;
 
     if (enableTRN)

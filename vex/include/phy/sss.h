@@ -132,7 +132,6 @@ sss_multi(vector p;
 	  vector n;
 	  vector alb;
 	  float eta;
-	  int samples;
 	  int sid;
 	  string scope;
 	  int doshadow;
@@ -140,8 +139,7 @@ sss_multi(vector p;
 	  string lightmask;
 	  int depth;
 	  float depthimp;
-	  int dorayvariance, minraysamples, isgamma;
-	  float variance)
+	  VarianceSampler vsampler)
 {
     float falb = max(alb);
     float radius = 7.50184474 * pow(falb, 0.78677001);
@@ -152,9 +150,7 @@ sss_multi(vector p;
     vector eval = .0;
     float pdf = .0;
 
-    // variance aa settings
-    float prevlum = .0;
-    float var = .0;
+    int samples = vsampler.maxraysamples;
 
     START_SAMPLING("decorrelate");
 
@@ -194,14 +190,8 @@ sss_multi(vector p;
             pdf += weight;
         }
 
-    if (dorayvariance)
-	{
-	    float lum = luminance(eval) / pdf;
-	    if (stop_by_variance(lum, prevlum, variance,
-				 isgamma, _i, minraysamples, var))
-		break;
-	    prevlum = lum;
-	}
+    if (vsampler->stop_by_variance(max(eval)/pdf, _i))
+	    break;
 
     END_LOOP;
 
@@ -268,46 +258,20 @@ struct RayMarcher
     int doshadow;
     string lightmask;
 
-    int dorayvariance = 0;
-    int minraysamples = 1;
-    int isgamma = 1;
-    float variance = 0.1;
+    VarianceSampler vsampler;
 
-    void
-    init(vector _ca;
-	 bsdf _f;
-	 int _sid, _samples, _depth;
-	 float _depthimp;
-	 int _doshadow;
-	 string _lightmask;
-	 int _dorayvariance, _minraysamples, _isgamma;
-	 float _variance)
-    {
-	ca = _ca;
-	f = _f;
-	sid = _sid;
-	samples = _samples;
-	depth = _depth;
-	depthimp = _depthimp;
-	doshadow = _doshadow;
-	lightmask = _lightmask;
-
-	dorayvariance = _dorayvariance;
-	minraysamples = _minraysamples;
-	isgamma = _isgamma;
-	variance = _variance;
-    }
 
     vector
     eval(vector p, v;
 	 float raylength)
     {
 	vector accum = .0;
-	float prevlum = 0;
-	float var = 0;
+	int counter = 1;
 
 	expsampler samp;
 	samp->init(ca, raylength);
+
+	int samples = vsampler.maxraysamples;
 
 	START_SAMPLING("decorrelate");
 
@@ -320,18 +284,12 @@ struct RayMarcher
 
 	accum += cl;
 
-	if (dorayvariance)
-	    {
-		float lum = luminance(cl) / (float)samples;
-		if (stop_by_variance(lum, prevlum, variance,
-				     isgamma, _i, minraysamples, var))
-		    break;
-		prevlum = lum;
-	    }
+	if (vsampler->stop_by_variance(max(accum)/(counter++), _i))
+	    break;
 	
 	END_LOOP;
 
-	return accum / samples;
+	return accum / counter;
     }
 };
 

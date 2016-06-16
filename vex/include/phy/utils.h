@@ -147,7 +147,7 @@ struct VarianceSampler
     int isgamma = 1;
     float variance = 0.01;
     int minraysamples = 1;
-    int maxraysamples = 1;
+    int maxraysamples = 9;
 
     float prevlum = .0;
     float var = .0;
@@ -182,13 +182,15 @@ struct VarianceSampler
 
 struct SamplingFactory
 {
-    float variance;
-    int dorayvariance;
-    int isgamma;
-    int minraysamples;
-    int maxraysamples;
+    float variance = 0.01;
+    int dorayvariance = 1;
+    int isgamma = 1;
+    int minraysamples = 1;
+    int maxraysamples = 9;
+    float depthk = 0.5;
 
-    void init()
+
+    void init(int depth; float depthimp)
     {
 	renderstate("object:variance", variance);
 	renderstate("object:dorayvariance", dorayvariance);
@@ -197,12 +199,18 @@ struct SamplingFactory
 	string colorspace;
 	renderstate("renderer:colorspace", colorspace);
 	isgamma = colorspace == "gamma";
+
+	depthk = pow(depthimp, depth);
     }
 
     VarianceSampler
     getsampler(int quality; int nsamples)
     {
 	VarianceSampler ret;
+	ret.isgamma = isgamma;
+	ret.variance = variance;
+	ret.var = .0;
+	ret.prevlum = .0;
 
 	// Sampling quality
 	//	0 - Auto (dorayvariance)
@@ -212,21 +220,20 @@ struct SamplingFactory
 	if (quality == 0)
 	    {
 		ret.dorayvariance = 1;
-		ret.maxraysamples = maxraysamples;
-		ret.minraysamples = minraysamples;
-		ret.isgamma = isgamma;
-		ret.variance = variance;
+		ret.maxraysamples = FLOOR_ALONE(maxraysamples * depthk);
+		ret.minraysamples = FLOOR_ALONE(minraysamples * depthk);
 	    }
 	else
 	    {
 		ret.dorayvariance = 0;
+		ret.minraysamples = 1;
 
 		if (quality == 1)
-		    ret.maxraysamples = minraysamples;
+		    ret.maxraysamples = FLOOR_ALONE(minraysamples * depthk);
 		else if (quality == 2)
-		    ret.maxraysamples = maxraysamples;
+		    ret.maxraysamples = FLOOR_ALONE(maxraysamples * depthk);
 		else
-		    ret.maxraysamples = nsamples;
+		    ret.maxraysamples = FLOOR_ALONE(nsamples * depthk);
 	    }
 
 	return ret;
