@@ -33,102 +33,58 @@
 
 
 // General parameters:
-//	sigma - surface rougness
-//	dotNH - dot product of normal and microfacet
+//	alpha - surface rougness
+//	dotWmWg - dot product of normal and microfacet
 
 // Next definitions are used in cvex shaders
 
-#define GGG_REFL refl = 1
 
-#define EVAL_GGG				\
-    pdf = ct_ggg(sigma, dotNH, dotNV);		\
-    eval = pdf;					\
-    GGG_REFL
-
-#define SAMPLE_GGG				\
-    pdf = pdf_ggg(v, u, n, h, sigma);		\
-    GGG_REFL
-
-#define MAKE_MICROFACET				\
-    vector h = microfacet(sigma, sx, sy);	\
-    h *= set(tu, tv, n);
-
-#define MAKE_ANISO_MICROFACET				\
-    vector h = microfacet(sigmau, sigmav, sx, sy);	\
-    h *= set(tu, tv, n);
-
-#define ANISO_SIGMA_EVAL float sigma =			\
-	sigmau == sigmav ? sigmau :			\
-	anisorough(h, n, tu, tv, dotNH, sigmau, sigmav);
-   
-#define ANISO_SIGMA_PDF float sigma = avg(sigmau, sigmav);
-
-#define REFLECTION_SAMPLE v = reflect(-u, h);
-
-#define REFRACTION_EVAL				\
-    vector tdir = -u;				\
-    if (eta != 1.) tdir = refract(-u, n, eta);	\
-    vector h = normalize(tdir + v);		\
-    vector nb = frontface(n, u, n);		\
-    float dotNH = dot(tdir, h);			\
-    float dotNV = dot(nb, v);
-
-#define REFRACTION_SAMPLE			\
-    vector hn = n - h;				\
-    hn = frontface(hn, u, hn);			\
-    v = refract(normalize(hn-u), n, eta);
-
-
-// Next routines based on:
-// 
-// Walter B., Marschner S. R., Li H., Torrance K. E.:
-// Microfacet models for refraction through rough surfaces. (2007)
-//
-// Heitz E. and d’Eon E.:
-// Importance Sampling Microfacet-Based BSDFs using
-// the Distribution of Visible Normals. (2014)
-
-
-// Modified GGX distribution
+// GGX distribution
 float
-ggg(float dotNH, sigma)
+ggg(float dotWmWg, alpha)
 {
-    float D = sigma / (sigma + 1.0/(dotNH*dotNH) - 1.0);
+    float D = alpha / (alpha + 1.0/(dotWmWg*dotWmWg) - 1.0);
     return D*D;
 }
 
+float
+ggxalbedo(float alpha)
+{
+    float tmp = alpha + 1.;
+    return 0.25 * (3.0 * alpha) / (tmp*tmp);
+}
 
 // Geometry attenuation factor
+//	nu - cosine of angle
 float
-gaf(float nu, sigma)
+gaf(float nu, alpha)
 {
-    return 2.0 / (1.0 + sqrt(1.0 + sigma * (1.0 / (nu*nu) - 1.0)));
+    return 2.0 / (1.0 + sqrt(1.0 + alpha * (1.0 / (nu*nu) - 1.0)));
 }
 
 
-// Cook-Torrance (almost)
 // Here is only shadowing GAF - masking term is in main routine
-//	dotNL - dot product of normal and vector towards light
+//	dotWgWi - dot product of normal and vector towards light
 float
-ct_ggg(float sigma, dotNH, dotNL)
+ct_ggg(float alpha, dotWmWg, dotWgWi)
 {
-    return ggg(dotNH, sigma) * gaf(dotNL, sigma);
+    return ggg(dotWmWg, alpha) * gaf(dotWgWi, alpha);
 }
 
 
 // Sampling PDF
-//	i - incoming light direction
-//	o - outgoing light direction
-//	n - normal
-//	h - microfacet
+//	wi - incoming light direction
+//	wo - outgoing light direction
+//	wg - normal
+//	wm - microfacet
 float
-pdf_ggg(vector i, o, n, h;
-	float sigma)
+pdf_ggg(vector wi, wo, wg, wm;
+	float alpha)
 {
-    return abs(dot(i, h))
-	* gaf(abs(dot(i, n)), sigma)
-	* gaf(abs(dot(o, n)), sigma)
-	/ (abs(dot(i, n)) + abs(dot(h, n)));
+    return abs(dot(wi, wm))
+	* gaf(abs(dot(wi, wg)), alpha)
+	* gaf(abs(dot(wo, wg)), alpha)
+	/ (abs(dot(wi, wg)) + abs(dot(wm, wg)));
 }
 
 
@@ -136,9 +92,9 @@ pdf_ggg(vector i, o, n, h;
 // sx, sy - uniform random varieties on (0, 1)
 // Isotropic case
 vector
-microfacet(float sigma, sx, sy)
+microfacet(float alpha, sx, sy)
 {
-    float tg = sigma * sqrt(sx) / sqrt(1. - sx);
+    float tg = alpha * sqrt(sx) / sqrt(1. - sx);
     float theta = 2. * PI * sy;
     float x = tg * cos(theta);
     float y = tg * sin(theta);
@@ -148,14 +104,14 @@ microfacet(float sigma, sx, sy)
 
 // Anisotropic case
 vector
-microfacet(float sigmau, sigmav, sx, sy)
+microfacet(float alphau, alphav, sx, sy)
 {
     float
 	_sx = sqrt(sx) / sqrt(1. - sx),
 	theta = 2. * PI * sy;
 
-    float x = sigmau * _sx * cos(theta);
-    float y = sigmav * _sx * sin(theta);
+    float x = alphau * _sx * cos(theta);
+    float y = alphav * _sx * sin(theta);
 
     return normalize(set(x, y, 1.));
 }
@@ -163,31 +119,31 @@ microfacet(float sigmau, sigmav, sx, sy)
 
 // Get anisotropy rougnesses by anisotropy bias
 void
-anisorough(float sigma, bias;
-	   export float sigmau, sigmav)
+anisorough(float alpha, bias;
+	   export float alphau, alphav)
 {
-    sigmau = sigma * (1. + bias);
-    sigmav = sigma * (1. - bias);
+    alphau = alpha * (1. + bias);
+    alphav = alpha * (1. - bias);
 }
 
 
 // Compute rougness for current point
 float
 anisorough(vector ph, tu, tv;
-	   float sigmau, sigmav)
+	   float alphau, alphav)
 {
     float
 	cu = dot(ph, tu),
 	cv = dot(ph, tv);
-    return 1.0 / (cu*cu/sigmau + cv*cv/sigmav);
+    return 1.0 / (cu*cu/alphau + cv*cv/alphav);
 }
 
 float
-anisorough(vector h, n, tu, tv;
-	   float dotNH, sigmau, sigmav)
+anisorough(vector wm, wg, tu, tv;
+	   float dotWmWg, alphau, alphav)
 {
-    vector ph = normalize(h - n * dotNH);
-    return anisorough(ph, tu, tv, sigmau, sigmav);
+    vector ph = normalize(wm - wg * dotWmWg);
+    return anisorough(ph, tu, tv, alphau, alphav);
 }
 
 
