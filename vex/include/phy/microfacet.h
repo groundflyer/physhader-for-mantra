@@ -51,15 +51,16 @@ float
 ggxalbedo(float alpha)
 {
     float tmp = alpha + 1.;
-    return 0.25 * (3.0 * alpha) / (tmp*tmp);
+    return 1.4 * alpha / (tmp*tmp);
 }
+
 
 // Geometry attenuation factor
 //	nu - cosine of angle
 float
 gaf(float nu, alpha)
 {
-    return 2.0 / (1.0 + sqrt(1.0 + alpha * (1.0 / (nu*nu) - 1.0)));
+    return 2.0 / (1.0 + sqrt(1.0 + alpha*alpha * (1.0 / (nu*nu) - 1.0)));
 }
 
 
@@ -73,18 +74,18 @@ ct_ggg(float alpha, dotWmWg, dotWgWi)
 
 
 // Sampling PDF
-//	wi - incoming light direction
-//	wo - outgoing light direction
+//	wo - incoming light direction
+//	wi - incident direction (towards viewer)
 //	wg - normal
 //	wm - microfacet
 float
-pdf_ggg(vector wi, wo, wg, wm;
+pdf_ggg(vector wo, wi, wg, wm;
 	float alpha)
 {
-    return abs(dot(wi, wm))
-	* gaf(abs(dot(wi, wg)), alpha)
+    return abs(dot(wo, wm))
 	* gaf(abs(dot(wo, wg)), alpha)
-	/ (abs(dot(wi, wg)) + abs(dot(wm, wg)));
+	* gaf(abs(dot(wi, wg)), alpha)
+	/ (abs(dot(wo, wg)) + abs(dot(wm, wg)));
 }
 
 
@@ -99,7 +100,7 @@ microfacet(float alpha, sx, sy)
     float x = tg * cos(theta);
     float y = tg * sin(theta);
 
-    return normalize(set(x, y, 1.));
+    return normalize(set(x, y, 1));
 }
 
 // Anisotropic case
@@ -113,7 +114,90 @@ microfacet(float alphau, alphav, sx, sy)
     float x = alphau * _sx * cos(theta);
     float y = alphav * _sx * sin(theta);
 
-    return normalize(set(x, y, 1.));
+    return normalize(set(x, y, 1));
+}
+
+
+// visible normals slope
+vector2
+get_slope(float theta, sx, _sy)
+{
+    float sy = _sy;
+
+    if (theta < 0.0001)
+	{
+	    float r = sqrt(sx/(1.-sx));
+	    float phi = 2. * PI * sy;
+	    return set(r * cos(phi), r * sin(phi));
+	}
+
+    float tan_theta = tan(theta);
+    float a = 1. / tan_theta;
+    float G1 = 2. / (1. + sqrt(1. + 1./(a*a)));
+
+    float A = 2. * sx/G1 - 1.;
+    float A2 = A*A;
+    float tmp = 1./(A2 - 1.);
+    float B2 = tan_theta * tan_theta;
+    float D = sqrt(B2 * tmp*tmp - (A2 - B2)*tmp);
+    float slopex1 = tan_theta * tmp - D;
+    float slopex2 = tan_theta * tmp + D;
+
+    vector2 ret = 0;
+    ret.x = (A <.0 || slopex2 > 1./tan_theta) ? slopex1 : slopex2;
+
+    float S;
+    if (sy > .5)
+	{
+	    S = 1.;
+	    sy = 2. * (sy - .5);
+	}
+    else
+	{
+	    S = -1.;
+	    sy = 2. * (.5 - sy);
+	}
+
+    float z = (sy*(sy*(sy * .27385 - .73369) + .46341)) /
+	(sy*(sy*(sy * .093073 + .309420) - 1.) + .597999);
+    ret.y = S * z * sqrt(1. + ret.x*ret.x);
+
+    return ret;
+}
+
+
+// visible normals microfacet
+//	wi - incident direction
+vector
+microfacet(const vector _wi;
+	   float alphau, alphav;
+	   float sx, sy)
+{
+    vector wi = _wi;
+    wi.x *= alphau;
+    wi.y *= alphav;
+
+    wi = normalize(wi);
+
+    float theta = .0;
+    float phi = .0;
+
+    if (wi.z < 0.99999)
+	{
+	    theta = acos(wi.z);
+	    phi = atan2(wi.y, wi.x);
+	}
+
+    vector2 slope = get_slope(theta, sx, sy);
+
+    float tmp = cos(phi) * slope.x - sin(phi) * slope.y;
+    slope.y = sin(phi) * slope.x + cos(phi) * slope.y;
+    slope.x = tmp;
+
+    slope.x *= alphau;
+    slope.y *= alphav;
+
+    return normalize(set(-slope.x, -slope.y, 1.));
 }
 
 
