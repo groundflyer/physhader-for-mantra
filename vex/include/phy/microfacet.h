@@ -62,61 +62,8 @@ gaf(float nu, alpha)
 }
 
 
-// Here is only shadowing GAF - masking term is in main routine
-//	dotWgWi - dot product of normal and vector towards light
-float
-ct_ggg(float alpha, dotWmWg, dotWgWi)
-{
-    return ggg(dotWmWg, alpha) * gaf(dotWgWi, alpha);
-}
-
-
-// Sampling PDF
-//	wo - incoming light direction
-//	wi - incident direction (towards viewer)
-//	wg - normal
-//	wm - microfacet
-float
-pdf_ggg(vector wo, wi, wg, wm;
-	float alpha)
-{
-    return abs(dot(wo, wm))
-	* gaf(abs(dot(wo, wg)), alpha)
-	* gaf(abs(dot(wi, wg)), alpha)
-	/ (abs(dot(wo, wg)) + abs(dot(wm, wg)));
-}
-
-
-// Return sampled microfacet
-// sx, sy - uniform random varieties on (0, 1)
-// Isotropic case
-vector
-microfacet(float alpha, sx, sy)
-{
-    float tg = alpha * sqrt(sx) / sqrt(1. - sx);
-    float theta = 2. * PI * sy;
-    float x = tg * cos(theta);
-    float y = tg * sin(theta);
-
-    return normalize(set(x, y, 1));
-}
-
-// Anisotropic case
-vector
-microfacet(float alphau, alphav, sx, sy)
-{
-    float
-	_sx = sqrt(sx) / sqrt(1. - sx),
-	theta = 2. * PI * sy;
-
-    float x = alphau * _sx * cos(theta);
-    float y = alphav * _sx * sin(theta);
-
-    return normalize(set(x, y, 1));
-}
-
-
-// visible normals slope
+// Distribution of visible normals
+// slope formulation
 vector2
 get_slope(float theta, sx, _sy)
 {
@@ -142,7 +89,7 @@ get_slope(float theta, sx, _sy)
     float slopex2 = tan_theta * tmp + D;
 
     vector2 ret = 0;
-    ret.x = (A <.0 || slopex2 > 1./tan_theta) ? slopex1 : slopex2;
+    ret.x = (A < .0 || slopex2 > 1./tan_theta) ? slopex1 : slopex2;
 
     float S;
     if (sy > .5)
@@ -164,16 +111,16 @@ get_slope(float theta, sx, _sy)
 }
 
 
-// visible normals microfacet
+// Distribution of visible normals microfacet
 //	wi - incident direction
 vector
 microfacet(const vector _wi;
-	   float alphau, alphav;
+	   vector2 alpha;
 	   float sx, sy)
 {
     vector wi = _wi;
-    wi.x *= alphau;
-    wi.y *= alphav;
+    wi.x *= alpha.x;
+    wi.y *= alpha.y;
 
     wi = normalize(wi);
 
@@ -188,24 +135,22 @@ microfacet(const vector _wi;
 
     vector2 slope = get_slope(theta, sx, sy);
 
-    float tmp = cos(phi) * slope.x - sin(phi) * slope.y;
-    slope.y = sin(phi) * slope.x + cos(phi) * slope.y;
-    slope.x = tmp;
+    float cosphi = cos(phi);
+    float sinphi = sin(phi);
+    slope *= set(cosphi, sinphi,
+		 -sinphi, cosphi);
 
-    slope.x *= alphau;
-    slope.y *= alphav;
+    slope *= alpha;
 
     return normalize(set(-slope.x, -slope.y, 1.));
 }
 
 
 // Get anisotropy rougnesses by anisotropy bias
-void
-anisorough(float alpha, bias;
-	   export float alphau, alphav)
+vector2
+anisorough(float alpha, bias)
 {
-    alphau = alpha * (1. + bias);
-    alphav = alpha * (1. - bias);
+    return set(alpha * (1. + bias), alpha * (1. - bias));
 }
 
 
@@ -222,13 +167,14 @@ anisorough_i(vector wi, tu, tv;
 // projected on surface rougness
 float
 anisorough_n(vector wm, wg, tu, tv;
-	     float dotWmWg, alphau, alphav)
+	     float dotWmWg;
+	     vector2 alpha)
 {
     vector ph = normalize(wm - wg * dotWmWg);
     float
 	cu = dot(ph, tu),
 	cv = dot(ph, tv);
-    return 1.0 / (cu*cu/alphau + cv*cv/alphav);
+    return 1.0 / (cu*cu/alpha.x + cv*cv/alpha.y);
 }
 
 
