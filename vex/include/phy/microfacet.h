@@ -43,24 +43,22 @@
 float
 ggg(float dotWmWg, alpha)
 {
-    float D = alpha / (alpha + 1.0/(dotWmWg*dotWmWg) - 1.0);
+    float D = alpha / (alpha*alpha + 1.0/(dotWmWg*dotWmWg) - 1.0);
     return D*D;
 }
 
 float
 ggxalbedo(float alpha)
 {
-    float tmp = alpha + 1.;
-    return 1.4 * alpha / (tmp*tmp);
+    return 0.20671025 * pow(alpha, 0.67948155);
 }
-
 
 // Geometry attenuation factor
 //	nu - cosine of angle
 float
 gaf(float nu, alpha)
 {
-    return 2.0 / (1.0 + sqrt(1.0 + alpha*alpha * (1.0 / (nu*nu) - 1.0)));
+    return 2.0 / (1.0 + sqrt(1.0 + alpha * (1.0 / (nu*nu) - 1.0)));
 }
 
 
@@ -211,23 +209,26 @@ anisorough(float alpha, bias;
 }
 
 
-// Compute rougness for current point
+// incident projected roughness
 float
-anisorough(vector ph, tu, tv;
-	   float alphau, alphav)
+anisorough_i(vector wi, tu, tv;
+	     vector2 alpha)
 {
+    float cs = dot(wi, tu);
+    float sn = dot(wi, tv);
+    return sqrt(cs*cs*alpha.x*alpha.x + sn*sn*alpha.y);
+}
+
+// projected on surface rougness
+float
+anisorough_n(vector wm, wg, tu, tv;
+	     float dotWmWg, alphau, alphav)
+{
+    vector ph = normalize(wm - wg * dotWmWg);
     float
 	cu = dot(ph, tu),
 	cv = dot(ph, tv);
     return 1.0 / (cu*cu/alphau + cv*cv/alphav);
-}
-
-float
-anisorough(vector wm, wg, tu, tv;
-	   float dotWmWg, alphau, alphav)
-{
-    vector ph = normalize(wm - wg * dotWmWg);
-    return anisorough(ph, tu, tv, alphau, alphav);
 }
 
 
