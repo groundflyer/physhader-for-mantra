@@ -43,15 +43,10 @@
 float
 ggg(float dotWmWg, alpha)
 {
-    float D = alpha / (alpha*alpha + 1.0/(dotWmWg*dotWmWg) - 1.0);
+    float D = alpha / (alpha + 1.0/(dotWmWg*dotWmWg) - 1.0);
     return D*D;
 }
 
-float
-ggxalbedo(float alpha)
-{
-    return 0.20671025 * pow(alpha, 0.67948155);
-}
 
 // Geometry attenuation factor
 //	nu - cosine of angle
