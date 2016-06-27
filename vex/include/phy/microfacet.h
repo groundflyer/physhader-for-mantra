@@ -41,10 +41,10 @@
 
 // GGX distribution
 float
-ggg(float dotWmWg, alpha)
+ggr(float dotWmWg, alpha, gamma)
 {
     float D = alpha / (alpha + 1.0/(dotWmWg*dotWmWg) - 1.0);
-    return D*D;
+    return pow(D, gamma);
 }
 
 
@@ -170,6 +170,25 @@ anisorough_n(vector wm, wg, tu, tv;
 	cu = dot(ph, tu),
 	cv = dot(ph, tv);
     return 1.0 / (cu*cu/alpha.x + cv*cv/alpha.y);
+}
+
+
+bsdf
+get_ggr(string label;
+	vector n, tu, tv;
+	vector2 alpha;
+	float gamma;
+	float eta)
+{
+    return cvex_bsdf("phy_aniso_eval",
+		     "phy_aniso_sample",
+		     "label", label,
+		     "wg", n,
+		     "alpha", alpha,
+		     "gamma", gamma,
+		     "tu", tu,
+		     "tv", tv,
+		     "eta", eta);
 }
 
 
