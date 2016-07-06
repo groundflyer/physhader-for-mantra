@@ -39,7 +39,7 @@
 // Next definitions are used in cvex shaders
 
 
-// GGX distribution
+// GTR distribution
 float
 ggr(float dotWmWg, alpha, gamma)
 {
@@ -58,7 +58,7 @@ gaf(float nu, alpha)
 
 
 // Distribution of visible normals
-// slope formulation
+// slope generation
 vector2
 get_slope(float theta, sx, _sy)
 {
@@ -108,9 +108,13 @@ get_slope(float theta, sx, _sy)
 
 // Distribution of visible normals microfacet
 //	wi - incident direction
+//	alpha - tuple of roughness parameters
+//	gamma - GTR parameter
+//	sx, sy - random numbers on range (0,1)
 vector
 microfacet(const vector _wi;
 	   vector2 alpha;
+	   float gamma;
 	   float sx, sy)
 {
     vector wi = _wi;
@@ -137,7 +141,7 @@ microfacet(const vector _wi;
 
     slope *= alpha;
 
-    return normalize(set(-slope.x, -slope.y, 1.));
+    return normalize(set(-slope.x, -slope.y, sqrt(gamma - 1.)));
 }
 
 
