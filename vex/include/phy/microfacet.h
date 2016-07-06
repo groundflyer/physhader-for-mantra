@@ -184,8 +184,8 @@ get_ggr(string label;
 	float gamma;
 	float eta)
 {
-    return cvex_bsdf("phy_aniso_eval",
-		     "phy_aniso_sample",
+    return cvex_bsdf("phy_eval",
+		     "phy_sample",
 		     "label", label,
 		     "wg", n,
 		     "alpha", alpha,
