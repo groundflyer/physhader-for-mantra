@@ -598,8 +598,10 @@ physurface(int conductor;
 	   float iori;		// refraction index of incident medium
 	   int enableDFS, enableSPC, enableTRN, enableSSS;
 	   float weightDFS, weightSPC, weightTRN, weightSSS;
-	   float roughDFS, roughSPC;
-	   float anisobias;
+	   float roughDFS; 	// Oren-Nayar roughness
+	   float roughSPC;	// GTR alpha parameter
+	   float gamma;		// GTR gamma parameter
+	   float anisobias;	// Anisotropy reflection/refraction bias
 	   vector sssca;	// SSS albedo
 	   vector sssdf;	// SSS diffuse
 	   vector absty;	// Absorption coefficient
@@ -681,19 +683,9 @@ physurface(int conductor;
 	gafmask = 1.,
 	gafrefr = 1.;
 
-    // Specular BRDF parameter
-    // With raytrace | micropoly engine
-    // light specular still evaluates
-    float sigma = max(roughSPC, SMOOTH_THRESHOLD);
-
     // Treat surface as perfect smooth
     // if specular rougness is below this value
     int smooth = roughSPC <= SMOOTH_THRESHOLD;
-
-    // Anisotropy roughness
-    float
-	sigmaU = sigma,
-	sigmaV = sigma;
     
     // Ray-tracing spread angle
     float angle = .0;
@@ -905,33 +897,23 @@ physurface(int conductor;
 	}
     else
 	{
+	    float sigma = max(roughSPC*roughSPC, SMOOTH_THRESHOLD);
+
 	    angle = atan(sigma);
 
-	    anisorough(sigma, anisobias, sigmaU, sigmaV);
-
-	    float beta = anisorough(v, tU, tV, sigmaU, sigmaV);
+	    vector2 alpha = anisorough(sigma, anisobias);
+	    float beta = anisorough_i(v, tU, tV, alpha);
 
 	    gafmask = gaf(dot(v, nfN), beta);
-	    gafrefr = gaf(dot(tdir, nbN), beta);
+	    gafrefr = gaf(dot(tdir, ni), beta);
 
-	    f_SPC = cvex_bsdf("phy_aniso_eval",
-			      "phy_aniso_sample",
-			      "label", "reflect",
-			      "n", nfN,
-			      "sigmau", sigmaU,
-			      "sigmav", sigmaV,
-			      "tu", tU,
-			      "tv", tV);
+	    f_SPC = get_ggr("reflect",
+			    nfN, tU, tV,
+			    alpha, gamma, 1.);
 
-	    f_TRN = cvex_bsdf("phy_aniso_trans_eval",
-			      "phy_aniso_trans_sample",
-			      "label", "refract",
-			      "n", n,
-			      "sigmau", sigmaU,
-			      "sigmav", sigmaV,
-			      "tu", tU,
-			      "tv", tV,
-			      "eta", thin ? 1. : eta);
+	    f_TRN = get_ggr("refract",
+			    n, tU, tV,
+			    alpha, gamma, thin ? 1. : eta);
 	}
 
     // Ray-tracing specular
