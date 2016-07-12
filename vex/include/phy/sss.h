@@ -144,9 +144,6 @@ sss_multi(vector p;
     float falb = max(alb);
     float radius = 7.50184474 * pow(falb, 0.78677001);
 
-    expsampler samp;
-    samp->init(alb, radius);
-
     vector eval = .0;
     float pdf = .0;
 
@@ -180,11 +177,8 @@ sss_multi(vector p;
 				       sid, depth, depthimp,
 				       doshadow, lightmask);
 
-            float sval = sy * samp.k3 * samp.max_rand;
-            int icomp = sampleExpComp(sval, samp.k1, samp.k2);
-
             vector evalR = reflectance_profile(alb, r);
-            float weight = 1. / exp(-samp.ext_sort[icomp] * r) * samp.ext_sort[icomp];
+            float weight = 1.;
 
             eval += weight * evalR * irr;
             pdf += weight;
