@@ -93,25 +93,13 @@ illum_surface(vector p, n;
     return eval;
 }
 
-
-// builds a transform matrix randomly rotated along axiz z
-matrix3
-rbasis(float sx; vector z)
-{
-    vector x, y;
-    vector u = normalize(vector(rand(sx))-0.5);
-    makebasis(x, y, z, u);
-    return set(x, y, z);
-}
-
-
 // evaluates BSSRDF approximate reflectance profile with given albedo and radius
 vector
 reflectance_profile(vector alb;
 		    float r)
 {
     vector tmp = -r/alb;
-    return (exp(tmp) + exp(tmp/3))/(1.+r);
+    return exp(tmp) + exp(tmp/3);
 }
 
 
@@ -120,8 +108,8 @@ vector
 sss_sample_pos(float sx, sy, alb, radius)
 {
     float theta = 2. * PI * sx;
-    float tmp = -sy*radius/alb;
-    float z = 0.25*exp(tmp)+0.75*exp(tmp/3);
+    float tmp = -alb/(sy*radius);
+    float z = 0.25 * exp(tmp) + 0.75 * exp(tmp/3);
     return set(sy*cos(theta), sy*sin(theta), z);
 }
 
@@ -142,52 +130,54 @@ sss_multi(vector p;
 	  VarianceSampler vsampler)
 {
     float falb = max(alb);
-    float radius = 7.50184474 * pow(falb, 0.78677001);
+    float radius = 5.57936707 * pow(falb, 0.75364915);
 
     vector eval = .0;
     float pdf = .0;
 
     int samples = vsampler.maxraysamples;
 
-    START_SAMPLING("decorrelate");
+    for (int _i = 0; _i < samples; ++_i)
+	{
+	    vector S;
+	    nextsample(sid, S, "mode", "nextpixel");
+	    vector randn = normalize(S-0.5);
+	    vector sn = lerp(n, randn, curvature);
+	    vector pt = radius * sss_sample_pos(nrandom(), nrandom(), falb, radius);
+	    pt.z += 0.005;	// explicit bias
+	    float maxdist = pt.z * 2.;
+	    vector dir = set(.0, .0, -1.);
+	    matrix3 basis = maketransform(sn, normalize(vector(nrandom())-0.5));
+	    pt = p + ptransform(pt, basis);
+	    dir = ntransform(dir, basis);
 
-    vector randn = normalize(vector(rand(sx))-0.5);
-    vector sn = lerp(n, randn, curvature);
-    vector pt = radius * sss_sample_pos(sx, sy, falb, radius);
-    vector dir = set(.0, .0, -1.);
-    matrix3 basis = rbasis(sy, sn);
-    pt = p + ptransform(pt, basis);
-    dir = ntransform(dir, basis);
+	    vector hitP, hitN;
 
-    vector hitP, hitN;
+	    if (trace(pt, dir, Time,
+		      "SID", sid,
+		      "pipeline", "displacement",
+		      "scope", scope,
+		      "samplefilter", "closest",
+		      "maxdist", maxdist,
+		      "P", hitP,
+		      "N", hitN))
+		{
+		    float r = distance(p, hitP);
+		    vector irr = illum_surface(hitP, normalize(hitN),
+					       eta,
+					       sid, depth, depthimp,
+					       doshadow, lightmask);
 
-    if (trace(pt, dir, Time,
-              "SID", sid,
-              "bias", 0,
-              "pipeline", "displacement",
-              "scope", scope,
-              "samplefilter", "closest",
-              "maxdist", radius,
-              "P", hitP,
-              "N", hitN))
-        {
-            float r = distance(p, hitP);
-            vector irr = illum_surface(hitP, normalize(hitN),
-				       eta,
-				       sid, depth, depthimp,
-				       doshadow, lightmask);
+		    vector evalR = reflectance_profile(alb, r);
+		    float weight = luminance(evalR);
 
-            vector evalR = reflectance_profile(alb, r);
-            float weight = 1.;
+		    eval += weight * evalR * irr;
+		    pdf += weight;
+		}
 
-            eval += weight * evalR * irr;
-            pdf += weight;
-        }
-
-    if (vsampler->stop_by_variance(max(eval)/pdf, _i))
-	    break;
-
-    END_LOOP;
+	    if (vsampler->stop_by_variance(max(eval)/pdf, _i))
+		break;
+	}
 
     return eval / pdf;
 }

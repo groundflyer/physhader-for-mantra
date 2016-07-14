@@ -647,7 +647,7 @@ physurface(int conductor;
     
     string renderengine;
     renderstate("renderer:renderengine", renderengine);
-    int sid = renderengine == "micropoly" ? newsampler() : SID;
+    int sid = renderengine == "micropoly" ? newsampler() : newsampler(SID);
 
 
     float
