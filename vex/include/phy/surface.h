@@ -331,7 +331,7 @@ raytrace(vector p, dir;
 #define CONTRIBUTE eval += pdf * brdf * tmp; summ += pdf
 #define AVERAGE if (summ > 0) eval /= summ
 
-#define VARIANCEAA if (vsampler->stop_by_variance(max(eval)/summ, _i)) break;
+#define VARIANCEAA if (vsampler->interrupt(max(eval)/summ, _i)) break;
 
 #define FINALIZE_SAMPLING CONTRIBUTE; VARIANCEAA; END_LOOP; AVERAGE
 

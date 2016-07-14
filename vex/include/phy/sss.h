@@ -175,7 +175,7 @@ sss_multi(vector p;
 		    pdf += weight;
 		}
 
-	    if (vsampler->stop_by_variance(max(eval)/pdf, _i))
+	    if (vsampler->interrupt(max(eval)/pdf, _i))
 		break;
 	}
 
@@ -268,7 +268,7 @@ struct RayMarcher
 
 	accum += cl;
 
-	if (vsampler->stop_by_variance(max(accum)/(counter++), _i))
+	if (vsampler->interrupt(max(accum)/(counter++), _i))
 	    break;
 	
 	END_LOOP;
