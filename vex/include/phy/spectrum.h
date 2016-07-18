@@ -119,41 +119,4 @@ samplewl(float sx)
 }
 
 
-// Load predifined Sellmeier coefficients
-// Possible choice options
-//	0 - Quartz
-//	1 - Sapphire
-//	2 - Diamond
-//	3 - BK7
-//	4 - SF10
-//	5 - F2
-//	6 - FK51A
-//	7 - LASF9
-void
-get_sellmeier(int choice;
-	      export vector SellmeierB, SellmeierC)
-{
-    vector
-    BCoeffs [] = array(set(0.6961663, 0.0684043, 0.4079426),
-                       set(1.4313493, 0.0726631, 0.65054713),
-                       set(0.3306, 0.1750, .0),
-                       set(1.03961212, 0.00600069867, 0.231792344),
-                       set(1.62153902, 0.0122241457, 0.256287842),
-                       set(1.34533359, 0.209073176, 0.937357162),
-                       set(0.971247817, 0.00472301995, 0.216901417),
-                       set(2.00029547, 0.0121426017, 0.298926886)),
-    CCoeffs [] = array(set(0.1162414, 0.8974794, 9.896161),
-                       set(0.1193242, 5.3414021, 18.028251),
-                       set(4.3356, 0.1060, .0),
-                       set(0.0200179144, 1.01046945, 103.560653),
-                       set(0.0595736775, 1.64447552, 147.468793),
-                       set(0.00997743871, 0.0470450767, 111.886764),
-                       set(0.0153575612, 0.904651666, 168.68133),
-                       set(0.0538736236, 1.80691843, 156.530829));
-
-    SellmeierB = BCoeffs[choice];
-    SellmeierC = CCoeffs[choice];
-}
-
-
 #endif
