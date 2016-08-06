@@ -36,14 +36,16 @@
 // except specified ones
 
 
-#define LOWER	0.429		// The lower limit of visible spectrum
-#define HIGHER	0.596		// The higher limit of visible spectrum
+#define LOWER	0.400		// The lower limit of visible spectrum
+#define HIGHER	0.680		// The higher limit of visible spectrum
 #define RANGE (HIGHER - LOWER)
 
 #define CIE_REC_709	set(3.2404542, -1.5371385, -0.4985314,	\
 			    -0.9692660, 1.8760108, 0.0415560,	\
 			    0.0556434, -0.2040259, 1.0572252);
 
+// White for the given range
+#define WHITE set(0.68522342, 0.29870292, 0.42072795)
 
 // Wavelength to CIE XYZ
 // 
@@ -93,7 +95,7 @@ xyz2rgb(vector xyz)
 vector
 wl2rgb(float wl)
 {
-    return xyz2rgb(wl2xyz(wl));
+    return xyz2rgb(wl2xyz(wl)) / WHITE;
 }
 
 
