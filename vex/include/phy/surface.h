@@ -65,6 +65,10 @@ illum_surface(vector p, pTRN, pSSS;
 	_trn = .0,
 	_sss = .0;
 
+    vector sp;
+    if (!getsmoothP(sp, -v))
+    	sp = p;
+
     START_ILLUMINANCE;
 
     vector _tmpDFS = .0;
@@ -79,7 +83,7 @@ illum_surface(vector p, pTRN, pSSS;
     START_SAMPLING("nextpixel");
     SET_SAMPLE;
 
-    SAMPLE_LIGHT(p, nfN);
+    SAMPLE_LIGHT(sp, nfN);
 
     // Diffuse reflection
     if (enableDFS)
