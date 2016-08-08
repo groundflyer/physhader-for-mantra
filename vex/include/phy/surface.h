@@ -903,7 +903,7 @@ physurface(int conductor;
 	{
 	    float sigma = max(roughSPC*roughSPC, SMOOTH_THRESHOLD);
 
-	    angle = atan(sigma);
+	    angle = atan(roughSPC);
 
 	    vector2 alpha = anisorough(sigma, anisobias);
 	    float beta = anisorough_i(v, tU, tV, alpha);
