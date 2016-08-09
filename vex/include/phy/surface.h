@@ -1062,10 +1062,7 @@ physurface(int conductor;
 
     // Translucency
     if (thin)
-	{
-	    factorSSS *= _sssca;
-	    factorTRN *= clrTRN * _absTRN;
-	}
+	factorTRN *= clrTRN * _absTRN;
 
     // Lighting
     illum_surface(p, pTRN, p + nbN * thickness,
@@ -1077,7 +1074,7 @@ physurface(int conductor;
 		  shadow,
     		  sid,
     		  depth,
-    		  enableDFS, allowSPC, allowTRN, translucent,
+    		  enableDFS, allowSPC, allowTRN, translucent && isRTMP,
     		  f_DFS, f_SPC, f_TRN, f_SSS,
     		  factorDFS, factorSPC, factorTRN, factorSSS,
     		  fullDFS, fullSPC, fullTRN, fullSSS);
@@ -1126,7 +1123,10 @@ physurface(int conductor;
     // PBR BSDF's
     f_DFS *= factorDFS;
     f_SPC *= factorSPC * absSPC;
-    f_SSS *= factorSSS;
+    if (translucent)
+	f_SSS *= factorSSS;
+    else
+	f_SSS *= 0;
 
     // Transparent shadow
     if (isshadowray() && allowTRN)
