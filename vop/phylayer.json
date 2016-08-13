@@ -1,0 +1,36 @@
+{
+	"typeDefinitions":[
+		{
+			"type":"struct",
+			"typeName":"PhyLayer",
+			"typeLabel":"PhyLayer",
+			"connectorColor":{
+				"type":"RGB",
+				"data":[0.422928005456924438,0.0538560152053833008,0.791999995708465576
+				]
+			},
+			"variables":[
+				{
+					"typeName":"vector",
+					"name":"beauty",
+					"label":"Cf"
+				},
+				{
+					"typeName":"vector",
+					"name":"opacity",
+					"label":"Of"
+				},
+				{
+					"typeName":"bsdf",
+					"name":"f",
+					"label":"F"
+				},
+				{
+					"typeName":"vectora",
+					"name":"all",
+					"label":"All"
+				}
+			]
+		}
+	]
+}
