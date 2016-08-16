@@ -95,9 +95,9 @@ sample_light(int lid, sid;
 
 // Test for point is in object
 int
-inobject(vector p;
-         string scope;
-	 vector test_dir)
+isinobject(vector p;
+	   string scope;
+	   vector test_dir)
 {
     vector hitN;
     int hit = trace(p, test_dir, Time, "scope", scope, "N", hitN);
