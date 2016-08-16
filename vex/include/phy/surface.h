@@ -587,10 +587,6 @@ thinP(vector p, i, nbN, nfN;
 }
 
 
-// optimize X absorption
-#define OPTABS(X) if (X) { rtAbsty = _absty; rtSSS = allowsinglesss ?  _sssca : .0; }
-
-
 // The main surface routine
 void
 physurface(int conductor;
@@ -847,6 +843,8 @@ physurface(int conductor;
     int isRTMP = (renderengine == "micropoly" ||
 		  renderengine == "raytrace");
 
+    // optimize absorption
+    // compute it inside trace routine
     int oAbs = doAbs && isRTMP;
 
     // refraction or internal
@@ -854,10 +852,6 @@ physurface(int conductor;
 
     // internal reflection will perform, drop specular
     int oAbsSPC = oAbs && !inside;
-
-    vector rtAbsty = .0;
-    vector rtSSS = .0;
-
 
     // Get tracing masks for non-gather tracing
     if(!renderstate("object:reflectmask", scopeSPC))
@@ -923,14 +917,16 @@ physurface(int conductor;
     // Ray-tracing specular
     if (allowSPC && styleSPC && isRTMP)
 	{
-	    OPTABS(oAbsSPC);
+	    vector spcAbsty = .0;
+	    if (oAbsSPC)
+		spcAbsty = _absty;
 
 	    if (smooth)
 		traceSPC = raytrace(p, rdir,
 				    maxdist,
 				    oblendSPC, styleSPC,
 				    "reflect", scopeSPC, gvarSPC,
-				    rtAbsty,
+				    spcAbsty,
 				    allowsinglesss,
 				    sss_single,
 				    singlescattering);
@@ -940,7 +936,7 @@ physurface(int conductor;
 				    maxdist,
 				    sid, oblendSPC, styleSPC,
 				    "reflect", scopeSPC, gvarSPC,
-				    rtAbsty,
+				    spcAbsty,
 				    tvsampler,
 				    allowsinglesss,
 				    sss_single,
@@ -951,7 +947,7 @@ physurface(int conductor;
 				    tvsampler.maxraysamples,
 				    oblendSPC, styleSPC,
 				    "reflect", scopeSPC, gvarSPC,
-				    rtAbsty,
+				    spcAbsty,
 				    allowsinglesss,
 				    sss_single,
 				    singlescattering);
@@ -1018,14 +1014,16 @@ physurface(int conductor;
 
 	    if (do_trace)
 		{
-		    OPTABS(oAbsTRN);
+		    vector trnAbsty = .0;
+		    if (oAbsTRN)
+			trnAbsty = _absty;
 
 		    if (smooth)
 			traceTRN = raytrace(pTRN, tdir,
 					    maxdist,
 					    oblendTRN, styleTRN,
 					    "refract", scopeTRN, gvarTRN,
-					    rtAbsty,
+					    trnAbsty,
 					    allowsinglesss,
 					    sss_single,
 					    singlescattering);
@@ -1035,7 +1033,7 @@ physurface(int conductor;
 					    maxdist,
 					    sid, oblendTRN, styleTRN,
 					    "refract", scopeTRN, gvarTRN,
-					    rtAbsty,
+					    trnAbsty,
 					    tvsampler,
 					    allowsinglesss,
 					    sss_single,
@@ -1046,7 +1044,7 @@ physurface(int conductor;
 					    tvsampler.maxraysamples,
 					    oblendTRN, styleTRN,
 					    "refract", scopeTRN, gvarTRN,
-					    rtAbsty,
+					    trnAbsty,
 					    allowsinglesss,
 					    sss_single,
 					    singlescattering);
