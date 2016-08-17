@@ -693,8 +693,6 @@ physurface(int conductor;
     // Absorption coefficient, scalar
     float kabs = max(absty);
 
-    int doAbs = kabs > .0;
-
     vector ni = normalize(ii);
     //Vector from point to viewer
     vector v = -ni;
@@ -763,7 +761,6 @@ physurface(int conductor;
 
     int solid = !thin;
     int thick = thin && thickness > .0;
-
 
     int depth = max(getraylevel(), getglobalraylevel());
     SamplingFactory sfactory;
@@ -842,6 +839,10 @@ physurface(int conductor;
 
     int isRTMP = (renderengine == "micropoly" ||
 		  renderengine == "raytrace");
+
+
+    // do absorption when
+    int doAbs = kabs > .0 && solid;
 
     // optimize absorption
     // compute it inside trace routine
