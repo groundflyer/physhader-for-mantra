@@ -415,7 +415,7 @@ raytrace(bsdf f;
 
 		if (summ > 0)
 		    {
-			sss /= summ * samples;
+			sss /= summ;
 			eval /= summ;
 		    }
 	    }
@@ -494,6 +494,63 @@ absorption(vector p, dir, kabs;
 
     sss /= samples;
     return eval / samples;
+}
+
+// BSDF case
+vector
+absorption(bsdf f;
+	   vector p, v, absty;
+	   float maxdist;
+	   int sid;
+	   string scope;
+	   VarianceSampler vsampler;
+	   int dosss;
+	   RayMarcher sss_single;
+	   export vector sss)
+{
+    INIT_ABSRP;
+
+    int type = 0;
+    vector dir = 0;
+    vector brdf = 0;
+    float pdf = 0;
+    float summ = .0;
+    int mask = PBR_REFRACT_MASK;
+    int samples = vsampler.maxraysamples;
+
+    START_SAMPLING("nextpixel");
+    SAMPLE_BSDF;
+
+    vector absrp = .0;
+    vector tmpsss = .0;
+
+    if(trace(p, dir, Time,
+	     TRACE_FLAGS(1),
+	     "ray:length", raylength))
+	{
+	    absrp += exp(-raylength * absty);
+
+	    if (dosss)
+		tmpsss = sss_single->eval(p, dir, raylength);
+
+	    eval += pdf * brdf * absrp;
+	    sss += pdf * tmpsss;
+	    summ += pdf;
+	}
+
+    if (vsampler->interrupt(max(eval+sss)/summ, _i))
+	break;
+
+    END_LOOP;
+
+    if (summ > 0)
+	{
+	    float isumm = 1. / summ;
+	    sss *= isumm;
+	    eval *= isumm;
+	}
+
+    return eval;
 }
 
 
@@ -1004,15 +1061,25 @@ physurface(int conductor;
 					    allowsinglesss,
 		    			    sss_single,
 		    			    tmpsss);
-		    else
-		    	abstmp = absorption(p, absdir,
-		    			    _absty,
-		    			    maxdist, angle,
-		    			    tvsampler.maxraysamples,
-		    			    scopeTRN,
+		    else if (useF)
+			abstmp = absorption(f_TRN,
+					    p, v, _absty,
+					    maxdist,
+					    sid,
+					    scopeTRN,
+					    tvsampler,
 					    allowsinglesss,
-		    			    sss_single,
-		    			    tmpsss);
+					    sss_single,
+					    tmpsss);
+			else
+			    abstmp = absorption(p, absdir,
+						_absty,
+						maxdist, angle,
+						tvsampler.maxraysamples,
+						scopeTRN,
+						allowsinglesss,
+						sss_single,
+						tmpsss);
 
 		    singlescattering = tmpsss;
 
