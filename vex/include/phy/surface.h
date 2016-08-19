@@ -488,8 +488,8 @@ absorption(vector p, dir, kabs;
 	    eval += exp(-raylength * kabs);
 
 	    if (dosss)
-		sss = sss_single->eval(p, dir,
-				      raylength);
+		sss += sss_single->eval(p, dir,
+					raylength);
 	}
 
     sss /= samples;
