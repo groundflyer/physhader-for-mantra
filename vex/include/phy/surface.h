@@ -373,9 +373,9 @@ raytrace(bsdf f;
     else if (style)
 	if (style == 1)
 	    {
-		vector tmpsss = .0;
 		START_SAMPLING("nextpixel");
 		SAMPLE_BSDF;
+		vector tmpsss = .0;
 
 		if (doabs)
 		    {
@@ -391,7 +391,7 @@ raytrace(bsdf f;
 				vector absrp = exp(-raylength * absty);
 
 				if (dosss)
-				    tmpsss += sss_single->eval(p, dir, raylength);
+				    tmpsss = sss_single->eval(p, dir, raylength);
 
 				tmp = max(hitCf, .0) * absrp;
 			    }
@@ -415,8 +415,9 @@ raytrace(bsdf f;
 
 		if (summ > 0)
 		    {
-			sss /= summ;
-			eval /= summ;
+			float isumm = 1. / summ;
+			sss *= isumm;
+			eval *= isumm;
 		    }
 	    }
 	else
