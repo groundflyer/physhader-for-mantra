@@ -718,8 +718,6 @@ physurface(int conductor;
     // Normalized refraction color
     vector clrTRN = absty / ALONE(kabs);
 
-    // Normalized SSS color 
-    vector _sssca = sssca / ALONE_VEC(sssca);
     // Scattering coefficint
     vector _sca = density * invert_hue(sssca);
 
@@ -824,7 +822,7 @@ physurface(int conductor;
 
     // Single scattering
     RayMarcher sss_single;
-    sss_single.ca = _absty;
+    sss_single.ca = _sca;
     sss_single.f = f_VOL;
     sss_single.sid = sid;
     sss_single.depth = depth;
