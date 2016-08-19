@@ -413,7 +413,7 @@ raytrace(bsdf f;
 
 		if (summ > 0)
 		    {
-			sss /= summ;
+			sss /= summ * samples;
 			eval /= summ;
 		    }
 	    }
