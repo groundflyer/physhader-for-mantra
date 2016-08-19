@@ -408,7 +408,9 @@ raytrace(bsdf f;
 		sss += pdf * tmpsss;
 		summ += pdf;
 
-		VARIANCEAA;
+		if (vsampler->interrupt(max(eval+sss)/summ, _i))
+		    break;
+
 		END_LOOP;
 
 		if (summ > 0)
