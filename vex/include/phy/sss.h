@@ -29,7 +29,6 @@
 #define __physss__
 
 
-#include <expsampler.h>
 #include <phy/utils.h>
 
 
@@ -252,15 +251,12 @@ struct RayMarcher
 	vector accum = .0;
 	int counter = 1;
 
-	expsampler samp;
-	samp->init(ca, raylength);
-
 	int samples = vsampler.maxraysamples;
 
 	START_SAMPLING("decorrelate");
 
-	vector cl;
-	float spo = samp->sample(cl, sx);
+	float spo = -log(sx) * raylength;
+	vector cl = exp(-ca * spo);
 
 	vector pp = p + v * spo;
 
