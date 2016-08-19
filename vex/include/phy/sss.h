@@ -264,7 +264,7 @@ struct RayMarcher
 
 	vector pp = p + v * spo;
 
-	cl *= illum_volume(pp, v, f, sid, depth, depthimp, doshadow, lightmask);
+	cl *= illum_volume(pp, -v, f, sid, depth, depthimp, doshadow, lightmask);
 
 	accum += cl;
 
