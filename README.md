@@ -6,7 +6,7 @@ A set of physical plausible shaders for Mantra renderer.
 ## PhySurface VOP
 * Energy conserving surface model
 * Complete PBR and RayTrace render engines support
-* GTR BSDF with anisotropy <sup>[1](#Walter07)</sup><sup>[2](#Heitz14)</sup> <sup>[3](#Burley12)</sup>
+* GTR BSDF with anisotropy <sup>[1](#Walter07)</sup> <sup>[2](#Heitz14)</sup> <sup>[3](#Burley12)</sup>
 * Conductor Fresnel
 * Volume absorption
 * Raytraced subsurface scattering
@@ -39,9 +39,14 @@ Copy `vex`,`otls`, `vop` and `gallery` folders into your Houdini home directory`
 6. RENDER
 
 ## References
-<a name="Walter07">1.</a>: Bruce Walter, Stephen R. Marschner, Hongsong Li, and Kenneth E. Torrance. Microfacet Models for Refraction through Rough Surfaces. In Proceedings of EGSR 2007.
-<a name="Heitz14">2.</a>: Eric Heitz, Eugene D'Eon. Importance Sampling Microfacet-Based BSDFs using the Distribution of Visible Normals. Computer Graphics Forum, Wiley-Blackwell, 2014, 33 (4), pp.103-112.
-<a name="Burley12">3.</a>: Brent Burley. Physically-Based Shading at Disney. 2012.
-<a name="CrBur15">4.</a>: Per H. Christensen, Brent Burley. An approximate reflectance profile for efficient subsurface scattering. 2015. In ACM SIGGRAPH 2015 Talks (SIGGRAPH '15).
-<a name="WySlo13">5.</a>: Chris Wyman, Peter-Pike Sloan, and Peter Shirley, Simple Analytic Approximations to the CIE XYZ Color Matching Functions, Journal of Computer Graphics Techniques (JCGT), vol. 2, no. 2, 1-11, 2013.
-<a name="Schmidt02">6.</a>: Charles M. Schmidt and Brian Budge. Simple Nested Dielectrics In Ray Traced Images. In Journal of Graphics Tools, 7(2), 2002.
+<a name="Walter07">1.</a> Bruce Walter, Stephen R. Marschner, Hongsong Li, and Kenneth E. Torrance. Microfacet Models for Refraction through Rough Surfaces. In Proceedings of EGSR 2007.
+
+<a name="Heitz14">2.</a> Eric Heitz, Eugene D'Eon. Importance Sampling Microfacet-Based BSDFs using the Distribution of Visible Normals. Computer Graphics Forum, Wiley-Blackwell, 2014, 33 (4), pp.103-112.
+
+<a name="Burley12">3.</a> Brent Burley. Physically-Based Shading at Disney. 2012.
+
+<a name="CrBur15">4.</a > Per H. Christensen, Brent Burley. An approximate reflectance profile for efficient subsurface scattering. 2015. In ACM SIGGRAPH 2015 Talks (SIGGRAPH '15).
+
+<a name="WySlo13">5.</a> Chris Wyman, Peter-Pike Sloan, and Peter Shirley, Simple Analytic Approximations to the CIE XYZ Color Matching Functions, Journal of Computer Graphics Techniques (JCGT), vol. 2, no. 2, 1-11, 2013.
+
+<a name="Schmidt02">6.</a> Charles M. Schmidt and Brian Budge. Simple Nested Dielectrics In Ray Traced Images. In Journal of Graphics Tools, 7(2), 2002.
