@@ -856,6 +856,14 @@ physurface(int conductor;
 			   "n", nbN);
     bsdf f_VOL = g == .0 ? isotropic() : henyeygreenstein(g);
 
+    // direct lighting BSDFs
+    bsdf f_SPC_dir = get_ggr("reflect",
+			     nfN, tU, tV,
+			     SMOOTH_THRESHOLD, gamma, 1.);
+    bsdf f_TRN_dir = get_ggr("refract",
+			     n, tU, tV,
+			     SMOOTH_THRESHOLD, gamma, thin ? 1. : eta);
+
 
     // When specular is allowed
     // In case of total internal reflection
@@ -980,6 +988,9 @@ physurface(int conductor;
 	    f_TRN = get_ggr("refract",
 			    n, tU, tV,
 			    alpha, gamma, thin ? 1. : eta);
+
+	    f_SPC_dir = f_SPC;
+	    f_TRN_dir = f_TRN;
 	}
 
     // Ray-tracing specular
@@ -1151,7 +1162,7 @@ physurface(int conductor;
     		  sid,
     		  depth,
     		  enableDFS, allowSPC, allowTRN, translucent && isRTMP,
-    		  f_DFS, f_SPC, f_TRN, f_SSS,
+    		  f_DFS, f_SPC_dir, f_TRN_dir, f_SSS,
     		  factorDFS, factorSPC, factorTRN, factorSSS,
     		  fullDFS, fullSPC, fullTRN, fullSSS);
 
