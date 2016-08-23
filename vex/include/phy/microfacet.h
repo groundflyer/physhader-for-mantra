@@ -149,7 +149,8 @@ microfacet(const vector _wi;
 vector2
 anisorough(float alpha, bias)
 {
-    return set(alpha * (1. + bias), alpha * (1. - bias));
+    float _bias = clamp(bias, -.9999, .9999);
+    return set(alpha * (1. + _bias), alpha * (1. - _bias));
 }
 
 
