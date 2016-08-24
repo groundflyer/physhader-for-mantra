@@ -214,11 +214,14 @@ illum_volume(vector p, v;
 
 	    SAMPLE_LIGHT(p, v);
 
-	    float weight = 0;
-	    cl *= eval_bsdf(f, v, l, weight, PBR_VOLUME_MASK);
+	    if (mask & bouncemask("sss"))
+		{
+		    float weight = 0;
+		    cl *= eval_bsdf(f, v, l, weight, PBR_VOLUME_MASK);
 
-	    pdf += weight;
-	    accum += cl * weight;
+		    pdf += weight;
+		    accum += cl * weight;
+		}
 
 	    END_LOOP; 	// SAMPLING
 
