@@ -5,12 +5,12 @@ A set of physical plausible shaders for Mantra renderer.
 
 ## PhySurface VOP
 * Energy conserving surface model
-* Complete PBR and RayTrace render engines support
-* GTR BSDF with anisotropy <sup>[1](#Walter07)</sup> <sup>[2](#Heitz14)</sup> <sup>[3](#Burley12)</sup>
+* PBR and RayTrace render engines support
+* GTR BSDF with anisotropy <sup>[1](#Walter07)</sup> <sup>[2](#Heitz14)</sup> <sup>[3](#Burley12)</sup> _(also avaible as a separate VOP node)_
 * Conductor Fresnel
 * Volume absorption
 * Raytraced subsurface scattering
- * Artist-friendly multiple scattering <sup>[4](#CrBur15)</sup>
+ * Artist-friendly multiple scattering <sup>[4](#CrBur15)</sup> _(also avaible as a separate VOP node)_
  * Ray-marched single scattering
 * Translucency
 * Dispersion <sup>[5](#WySlo13)</sup>
