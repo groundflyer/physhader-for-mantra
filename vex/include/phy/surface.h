@@ -728,9 +728,11 @@ physurface(int conductor;
     // IOR
     float etat = max(1.0000016, iort.x);
 
+    int solid = !thin;
+
     // Dispersion
     vector dtint = 1.;
-    if (dispersion)
+    if (dispersion && solid)
 	{
 	    float wl = samplewl(rand(sid));
 	    etat = sellmeier(wl, sellmeierB, sellmeierC);
@@ -817,7 +819,6 @@ physurface(int conductor;
     // Is the total internal reflection case
     int internal = rdir == tdir;
 
-    int solid = !thin;
     int thick = thin && thickness > .0;
 
     int depth = max(getraylevel(), getglobalraylevel());
