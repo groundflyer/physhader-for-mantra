@@ -708,11 +708,6 @@ physurface(int conductor;
 {
     beauty = .0;
     opacity = 1.;
-    vector fullDFS = .0;
-    vector fullSPC = .0;
-    vector fullTRN = .0;
-    vector fullSSS = .0;
-
     
     string renderengine;
     renderstate("renderer:renderengine", renderengine);
@@ -806,10 +801,6 @@ physurface(int conductor;
     vector factorSPC = .0;
     vector factorSSS = .0;
     vector factorTRN = .0;
-
-    // Ray-traced values
-    vector traceTRN = .0;
-    vector traceSPC = .0;
 
     // Shadow amount
     vector sh = .0;
@@ -993,6 +984,10 @@ physurface(int conductor;
 	    f_TRN_dir = f_TRN;
 	}
 
+    // Ray-traced values
+    vector traceTRN = .0;
+    vector traceSPC = .0;
+
     // Ray-tracing specular
     if (allowSPC && styleSPC && isRTMP)
 	{
@@ -1151,6 +1146,14 @@ physurface(int conductor;
     if (thin)
 	factorTRN *= clrTRN * _absTRN;
 
+    vector fullDFS = .0;
+    vector fullSPC = .0;
+    vector fullTRN = .0;
+    vector fullSSS = .0;
+
+    vector dirSPC = .0;
+    vector dirTRN = .0;
+
     // Lighting
     illum_surface(p, pTRN, p + nbN * thickness,
     		  nfN, nbN,
@@ -1164,7 +1167,7 @@ physurface(int conductor;
     		  enableDFS, allowSPC, allowTRN, translucent && isRTMP,
     		  f_DFS, f_SPC_dir, f_TRN_dir, f_SSS,
     		  factorDFS, factorSPC, factorTRN, factorSSS,
-    		  fullDFS, fullSPC, fullTRN, fullSSS);
+    		  fullDFS, dirSPC, dirTRN, fullSSS);
 
     // Compute multiple scattering
     if (allowmultisss)
@@ -1195,7 +1198,8 @@ physurface(int conductor;
     
     if (allowTRN)
 	{
-	    fullTRN += traceTRN * absTRN * factorTRN;
+	    traceTRN *= absTRN * factorTRN;
+	    fullTRN += traceTRN + dirTRN;
 	    f_TRN *= factorTRN * absTRN;
 	}
     else
@@ -1204,8 +1208,9 @@ physurface(int conductor;
 	    f_TRN *= .0;
 	}
 
-    
-    fullSPC += traceSPC * absSPC * factorSPC;
+
+    traceSPC *= absSPC * factorSPC;
+    fullSPC += traceSPC + dirSPC;
 
     // PBR BSDF's
     f_DFS *= factorDFS;
@@ -1234,7 +1239,7 @@ physurface(int conductor;
 	}
 
     beauty = fullDFS + fullSPC + fullTRN + fullSSS;
-    all = array(fullDFS, fullSPC, fullTRN, fullSSS);
+    all = array(fullDFS, fullSPC, fullTRN, fullSSS, dirSPC, dirTRN, traceSPC, traceTRN);
     f = f_DFS + f_SPC + f_TRN + f_SSS;
 }
 
