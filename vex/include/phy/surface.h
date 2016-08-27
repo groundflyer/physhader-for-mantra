@@ -940,7 +940,16 @@ physurface(int conductor;
 	{
 	    kSPC = alb;
 	    fr = cfresnel(v, nfN, eta, etak);
-	    clrSPC = _clrsurf;
+
+	    if (dispersion)
+		{
+		    vector hsv = rgbtohsv(_clrsurf);
+		    hsv.y = .0;
+		    vector desat = hsvtorgb(hsv);
+		    clrSPC = lerp(_clrsurf, desat, fr);
+		}
+	    else
+		clrSPC = _clrsurf;
 	}
     else
 	{
