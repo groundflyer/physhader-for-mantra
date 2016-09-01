@@ -878,6 +878,7 @@ physurface(int conductor;
     int allowmultisss =
 	allowSSS	&&
 	msamples	&&
+	!allowTRN	&&
 	!(mdisablesecondary && depth);
 
     int allowsinglesss =
