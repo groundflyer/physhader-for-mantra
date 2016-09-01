@@ -38,6 +38,8 @@ Copy `vex`,`otls`, `vop` and `gallery` folders into your Houdini home directory`
 5. ...
 6. RENDER
 
+[Nested dielectrics tutorial](https://vimeo.com/180913817)
+
 ## References
 <a name="Walter07">1.</a> Bruce Walter, Stephen R. Marschner, Hongsong Li, and Kenneth E. Torrance. Microfacet Models for Refraction through Rough Surfaces. In Proceedings of EGSR 2007.
 
