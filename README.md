@@ -30,7 +30,8 @@ A set of physical plausible shaders for Mantra renderer.
 ##Installation
 Copy `vex`,`otls`, `vop` and `gallery` folders into your Houdini home directory`$HOUDINI_USER_PREF_DIR` or `$HIH`.
 
-## Quickstart
+##Usage
+### Quickstart
 1. Go to Material Palette
 2. Choose PhySurface and move material into the scene
 3. Assign material to object
@@ -38,7 +39,12 @@ Copy `vex`,`otls`, `vop` and `gallery` folders into your Houdini home directory`
 5. ...
 6. RENDER
 
-[Nested dielectrics tutorial](https://vimeo.com/180913817)
+### Nested dielectrics
+[Video Tutorial](https://vimeo.com/180913817)
+
+### Quicktips
+1. The preferred Environment Light mode is **Ray tracing background** instead of "Direct Lighting".
+2. Indirect lights, such as Ambient Occlusion, Irradiance or Caustic Light do not contribute to subsurface scattering, however Environment Light in Direct Lighting mode does. Try using the combination of two Environment Lights in "Ray Tracing background" and "Direct" modes with object and shader Lightmasks.
 
 ## References
 <a name="Walter07">1.</a> Bruce Walter, Stephen R. Marschner, Hongsong Li, and Kenneth E. Torrance. Microfacet Models for Refraction through Rough Surfaces. In Proceedings of EGSR 2007.
