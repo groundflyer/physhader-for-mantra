@@ -825,11 +825,6 @@ physurface(int conductor;
     SamplingFactory sfactory;
     sfactory->init(depth, depthimp);
 
-    // raytracing variance aa
-    VarianceSampler tvsampler = sfactory->getsampler(tsquality, tsamples);
-    // multiple scattering variance aa
-    VarianceSampler mvsampler = sfactory->getsampler(msquality, msamples);
-
     // Ray-tracing scope
     string scopeSPC = "scope:default";
     string scopeTRN = "scope:default";
@@ -1002,7 +997,9 @@ physurface(int conductor;
     // Ray-tracing specular
     if (allowSPC && styleSPC && isRTMP)
 	{
+	    VarianceSampler tvsampler = sfactory->getsampler(tsquality, tsamples);
 	    vector spcAbsty = .0;
+
 	    if (oAbsSPC)
 		spcAbsty = _absty;
 
@@ -1062,6 +1059,8 @@ physurface(int conductor;
 		    }
 	    else if (doAbs && !oAbs)
 		{
+		    VarianceSampler tvsampler = sfactory->getsampler(tsquality, tsamples);
+
 		    // Absorption and single scattering for PBR
 		    vector abstmp = 1.;
 		    vector tmpsss = .0;
@@ -1109,6 +1108,7 @@ physurface(int conductor;
 
 	    if (do_trace)
 		{
+		    VarianceSampler tvsampler = sfactory->getsampler(tsquality, tsamples);
 		    vector trnAbsty = .0;
 		    if (oAbsTRN)
 			trnAbsty = _absty;
@@ -1175,24 +1175,28 @@ physurface(int conductor;
 		  shadow,
     		  sid,
     		  depth,
-    		  enableDFS, allowSPC, allowTRN, translucent && isRTMP,
+    		  enableDFS, allowSPC, allowTRN && !allowmultisss, translucent && isRTMP,
     		  f_DFS, f_SPC_dir, f_TRN_dir, f_SSS,
     		  factorDFS, factorSPC, factorTRN, factorSSS,
     		  fullDFS, dirSPC, dirTRN, fullSSS);
 
     // Compute multiple scattering
     if (allowmultisss)
-    	fullSSS = sss_multi(p, n,
-			    sssca,
-			    eta,
-			    sid,
-			    sscope,
-			    shadow,
-			    curvature,
-			    lightmasksss,
-			    depth, depthimp,
-			    mvsampler)
-    	    * factorSSS;
+	{
+	    VarianceSampler mvsampler = sfactory->getsampler(msquality, msamples);
+
+	    fullSSS = sss_multi(p, n,
+				sssca,
+				eta,
+				sid,
+				sscope,
+				shadow,
+				curvature,
+				lightmasksss,
+				depth, depthimp,
+				mvsampler)
+		* factorSSS;
+	}
 
     if (enableTRN)
 	{
