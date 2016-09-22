@@ -161,7 +161,7 @@ anisorough_i(vector wi, tu, tv;
 {
     float cs = dot(wi, tu);
     float sn = dot(wi, tv);
-    return sqrt(cs*cs*alpha.x*alpha.x + sn*sn*alpha.y);
+    return sqrt(cs*cs*alpha.x*alpha.x + sn*sn*alpha.y*alpha.y);
 }
 
 // projected on surface rougness
