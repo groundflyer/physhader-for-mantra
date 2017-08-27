@@ -1,16 +1,16 @@
 # PhyShader
 A set of physical plausible shaders for Mantra renderer.
 
-[![Donate](https://www.paypalobjects.com/webstatic/en_US/btn/btn_donate_74x21.png)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=996RRSDD2C3YQ) [![GitHub release](https://img.shields.io/github/release/groundflyer/physhader-for-mantra.svg)](https://github.com/groundflyer/physhader-for-mantra/releases) [![Houdini Version Compatibilty](https://img.shields.io/badge/houdini-15.5-yellow.svg)](http://www.sidefx.com/index.php?option=com_download&Itemid=208)
+[![GitHub release](https://img.shields.io/github/release/groundflyer/physhader-for-mantra.svg)](https://github.com/groundflyer/physhader-for-mantra/releases) [![Houdini Version Compatibilty](https://img.shields.io/badge/houdini-15.5-yellow.svg)](http://www.sidefx.com/index.php?option=com_download&Itemid=208)
 
 ## PhySurface VOP
 * Energy conserving surface model
 * PBR and RayTrace render engines support
-* GTR BSDF with anisotropy <sup>[1](#Walter07)</sup> <sup>[2](#Heitz14)</sup> <sup>[3](#Burley12)</sup> _(also avaible as a separate VOP node)_
+* GTR BSDF with anisotropy <sup>[1](#Walter07)</sup> <sup>[2](#Heitz14)</sup> <sup>[3](#Burley12)</sup> _(also available as a separate VOP node)_
 * Conductor Fresnel
 * Volume absorption
 * Raytraced subsurface scattering
- * Artist-friendly multiple scattering <sup>[4](#CrBur15)</sup> _(also avaible as a separate VOP node)_
+ * Artist-friendly multiple scattering <sup>[4](#CrBur15)</sup> _(also available as a separate VOP node)_
  * Ray-marched single scattering
 * Translucency
 * Dispersion <sup>[5](#WySlo13)</sup>
@@ -27,10 +27,10 @@ A set of physical plausible shaders for Mantra renderer.
 * Color scattering and absorption
 * Per-light image planes
 
-##Installation
+## Installation
 Copy `vex`,`otls`, `vop` and `gallery` folders into your Houdini home directory`$HOUDINI_USER_PREF_DIR` or `$HIH`.
 
-##Usage
+## Usage
 ### Quickstart
 1. Go to Material Palette
 2. Choose PhySurface and move material into the scene
